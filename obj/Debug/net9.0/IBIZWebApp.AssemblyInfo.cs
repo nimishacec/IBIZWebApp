@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IBIZWebApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+36f41b9ef9f979a2c5dd13cc49ba05fdb151498c")]
 [assembly: System.Reflection.AssemblyProductAttribute("IBIZWebApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IBIZWebApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
