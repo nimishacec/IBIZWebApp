@@ -1,0 +1,195 @@
+﻿@inject IBIZWebApp.Services.UserSessionService UserSession
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+@if (IsMobileView)
+{
+    <!-- Mobile: top bar with hamburger + dropdown menu -->
+    <div class="top-row navbar navbar-dark nav-header d-flex justify-content-between align-items-center" style="position:sticky;top:0;z-index:3001;width:100vw;">
+        <a class="navbar-brand" href="">Inventory Biz</a>
+        <button class="navbar-toggler nav-mobile-toggle ms-auto" @onclick="ToggleNavMenu" style="position: absolute; right: 1rem; top: 0.75rem;">
+            <span style="font-size:2rem; color:#fff;">&#9776;</span>
+        </button>
+    </div>
+    <div class="mobile-dropdown-container">
+        @if (!isNavMenuCollapsed)
+        {
+            <div class="mobile-dropdown-menu animate-dropdown">
+                <nav class="nav flex-column">
+                    @if (string.IsNullOrEmpty(UserSession.UserId))
+                    {
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="mobile-verification" Match="NavLinkMatch.All">
+                                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                            </NavLink>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="sales">
+                                <span class="bi bi-bag-fill" aria-hidden="true"></span> Sales
+                            </NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="sales-summary">
+                                <span class="bi bi-bar-chart-fill" aria-hidden="true"></span> Sales Summary
+                            </NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="sales-order">
+                                <span class="bi bi-bag-check-nav-menu" aria-hidden="true"></span> Sales Order
+                            </NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="sales-list">
+                                <span class="bi bi-list-ul" aria-hidden="true"></span> Sales                             </NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="receipts">
+                                <span class="bi bi-cash-stack" aria-hidden="true"></span> Receipts
+                            </NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="crm-dashboard">
+                                <span class="bi bi-speedometer2-nav-menu" aria-hidden="true"></span> CRM Dashboard
+                            </NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="lead">
+                                <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> Lead
+                            </NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="logout">
+                                <span class="bi bi-box-arrow-right-nav-menu" aria-hidden="true"></span> Logout
+                            </NavLink>
+                        </div>
+                    }
+                </nav>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <!-- Desktop: top bar + sidebar menu -->
+    <div class="top-row navbar navbar-dark nav-header d-flex justify-content-between align-items-center" style="position:sticky;top:0;z-index:3001;">
+           <a class="navbar-brand" href="">Inventory Biz</a>
+    </div>
+    <div class="nav-scrollable desktop-menu-left" style="z-index: 1000;">
+        <nav class="nav flex-column" style="margin-top:0.5rem; z-index: 9999; position: relative;">
+            @if (string.IsNullOrEmpty(UserSession.UserId))
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="mobile-verification" Match="NavLinkMatch.All">
+                        <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                    </NavLink>
+                </div>
+            }
+            else
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="sales">
+                        <span class="bi bi-bag-fill" aria-hidden="true"></span> Sales
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="sales-summary">
+                        <span class="bi bi-bar-chart-fill" aria-hidden="true"></span> Sales Summary
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="sales-order">
+                        <span class="bi bi-bag-check-nav-menu" aria-hidden="true"></span> Sales Order
+                    </NavLink>
+                </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="sales-list">
+                            <span class="bi bi-list-ul" aria-hidden="true"></span> Sales
+                        </NavLink>
+                    </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="receipts">
+                        <span class="bi bi-cash-stack" aria-hidden="true"></span> Receipts
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="crm-dashboard">
+                        <span class="bi bi-speedometer2-nav-menu" aria-hidden="true"></span> CRM Dashboard
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="reports">
+                        <span class="bi bi-file-earmark-bar-graph" aria-hidden="true"></span> Reports
+                    </NavLink>
+                </div>
+                
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="lead">
+                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> Lead
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="logout">
+                        <span class="bi bi-box-arrow-right-nav-menu" aria-hidden="true"></span> Logout
+                    </NavLink>
+                </div>
+            }
+        </nav>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<bool> OnMenuStateChanged { get; set; }
+    private bool isNavMenuCollapsed = true;
+    private bool IsMobileView => windowWidth <= 768;
+    private int windowWidth = 1024;
+    private int previousWindowWidth = 1024;
+
+    private void ToggleNavMenu()
+    {
+        isNavMenuCollapsed = !isNavMenuCollapsed;
+        OnMenuStateChanged.InvokeAsync(!isNavMenuCollapsed);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+        await UserSession.LoadUserIdAsync();
+        await JS.InvokeVoidAsync("blazorNavMenu.registerResizeCallback", DotNetObjectReference.Create(this));
+        windowWidth = await JS.InvokeAsync<int>("blazorNavMenu.getWindowWidth");
+        StateHasChanged();
+    }
+
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        await UserSession.LoadUserIdAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public void OnWindowResize(int width)
+    {
+        bool wasMobile = previousWindowWidth <= 768;
+        bool isNowMobile = width <= 768;
+        previousWindowWidth = windowWidth;
+        windowWidth = width;
+        if (!wasMobile && isNowMobile)
+        {
+            isNavMenuCollapsed = true;
+        }
+        if (!isNowMobile)
+        {
+            isNavMenuCollapsed = false;
+        }
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

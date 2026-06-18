@@ -1,0 +1,86 @@
+.order-entry-container {
+    max-width: 100vw;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+.order-header, .header-grid, .header-grid-second {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: flex-start;
+}
+
+.header-item {
+    flex: 1 1 220px;
+    min-width: 220px;
+    max-width: 320px;
+    margin-bottom: 8px;
+}
+
+.header-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+    .order-entry-container {
+        padding: 0 4px;
+    }
+    .header-item {
+        min-width: 140px;
+    }
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 1.5fr 0.8fr;
+    gap: 24px;
+    margin-bottom: 0;
+    height: 100vh;
+    width: 100vw;
+    max-width: 100vw;
+    box-sizing: border-box;
+    padding-right: 0;
+    margin-right: 0;
+}
+
+.item-search-panel {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+    max-width: 600px;
+}
+
+.right-section {
+    width: 100%;
+    min-width: 340px;
+    max-width: 400px;
+    overflow-y: unset;
+    max-height: unset;
+    margin-right: 0;
+    float: none;
+}
+
+.left-section {
+    width: 100%;
+    margin-right: 0;
+}
+
+/* Make barcode scan button wider */
+.barcode-search button, .barcode-search .scan-btn {
+    min-width: 80px;
+    width: 100px;
+    height: 38px;
+    font-size: 15px;
+    margin-left: 8px;
+}
+
+.barcode-search {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}

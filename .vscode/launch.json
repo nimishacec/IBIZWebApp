@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Blazor App",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/IBIZWebApp.csproj",
+      "launchBrowser": true,
+      "launchUrl": "http://localhost:5280"
+    }
+  ]
+}

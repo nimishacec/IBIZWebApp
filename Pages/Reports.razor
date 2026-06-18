@@ -1,0 +1,936 @@
+@page "/reports"
+@layout MainLayout
+@inject HttpClient Http
+@inject ICompanySelectionService CompanyService
+@inject IBIZWebApp.Services.UserSessionService UserSession
+@inject IBIZWebApp.Services.ITokenService _tokenService
+
+@using IBIZWebApp
+@using IBIZWebApp.Services
+@using IBIZWebApp.Models
+@inject HttpClient Http
+@inject ICompanySelectionService CompanyService
+
+
+@code {
+    private string selectedVoucher = string.Empty;
+    private string selectedReport = string.Empty;
+    private DateTime? fromDate = null;
+    private DateTime? toDate = null;
+    private string? selectedPaymentMode = string.Empty;
+
+    // Removed duplicate ParseDate and FormatDate methods
+}
+
+<div class="reports-container">
+    <h2 class="reports-heading">Reports</h2>
+    <div class="voucher-select voucher-select-above">
+        <label for="voucher">Select Voucher:</label>
+        <select id="voucher" @bind="selectedVoucher">
+            <option value="">-- Select --</option>
+            <option value="SALES">SALES</option>
+            <option value="SALES ORDER">SALES ORDER</option>
+            <option value="RECEIPT">RECEIPT</option>
+            <option value="PAYMENT">PAYMENT</option>
+            <!-- Add more voucher types as needed -->
+        </select>
+    </div>
+    <div class="report-links">
+        <ul>
+            <li>
+                <button class="report-btn @(selectedReport == "daily" ? "active" : null)" @onclick='() => SelectReport("daily")' disabled="@(string.IsNullOrEmpty(selectedVoucher))">Daily Report</button>
+            </li>
+            <li>
+                <button class="report-btn @(selectedReport == "weekly" ? "active" : null)" @onclick='() => SelectReport("weekly")' disabled="@(string.IsNullOrEmpty(selectedVoucher))">Weekly Report</button>
+            </li>
+            <li>
+                <button class="report-btn @(selectedReport == "monthly" ? "active" : null)" @onclick='() => SelectReport("monthly")' disabled="@(string.IsNullOrEmpty(selectedVoucher))">Monthly Report</button>
+            </li>
+            <li>
+                <button class="report-btn @(selectedReport == "yearly" ? "active" : null)" @onclick='() => SelectReport("yearly")' disabled="@(string.IsNullOrEmpty(selectedVoucher))">Yearly Report</button>
+            </li>
+            <li>
+                <button class="report-btn @(selectedReport == "custom" ? "active" : null)" @onclick='() => SelectReport("custom")' disabled="@(string.IsNullOrEmpty(selectedVoucher))">Custom Report</button>
+            </li>
+        </ul>
+    </div>
+
+
+    <!-- Payment Mode Dropdown for all tabs -->
+    @if (!string.IsNullOrEmpty(selectedReport))
+    {
+        <div style="height: 18px;"></div>
+        <div class="voucher-select" style="margin-bottom: 18px;">
+            <label for="paymentMode">Payment Mode:</label>
+            <select id="paymentMode" @bind="selectedPaymentMode">
+                <option value="">-- All --</option>
+                <option value="CASH">CASH</option>
+                <option value="BANK">BANK</option>
+                <option value="CARD">CARD</option>
+                <option value="UPI">UPI</option>
+                <!-- Add more as needed -->
+            </select>
+        </div>
+    }
+
+    @if (selectedReport == "weekly")
+    {
+        <div class="week-select-range" style="margin-bottom: 18px; display: flex; gap: 18px; align-items: center; justify-content: center;">
+            <label>Year:
+                <select @bind="selectedWeekYear">
+                    @foreach (var year in AvailableYears)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </label>
+            <label>Week:
+                <select @bind="selectedWeekIndex">
+                    <option value="-1">-- Select Week --</option>
+                    @for (int i = 0; i < WeekRanges.Count; i++)
+                    {
+                        var range = WeekRanges[i];
+                        <option value="@i">@range</option>
+                    }
+                </select>
+            </label>
+            <button class="fetch-btn" @onclick="LoadReports" disabled="@(selectedWeekIndex == -1)">Show Report</button>
+        </div>
+    }
+
+    @if (selectedReport == "daily")
+    {
+        <div class="custom-date-range" style="margin-bottom: 18px;">
+            <button class="fetch-btn" @onclick="LoadReports">Show Report</button>
+        </div>
+    }
+
+    @if (selectedReport == "monthly")
+    {
+        <div class="custom-date-range" style="margin-bottom: 18px;">
+            <label>Year:
+                <select @bind="selectedMonthYear">
+                    @foreach (var year in AvailableYears)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </label>
+            <label>Month:
+                <select @bind="selectedMonthIndex">
+                    <option value="-1">-- Select Month --</option>
+                    @for (int i = 0; i < MonthNames.Length; i++)
+                    {
+                        <option value="@i">@MonthNames[i]</option>
+                    }
+                </select>
+            </label>
+            <button class="fetch-btn" @onclick="LoadReports" disabled="@(selectedMonthIndex == -1)">Show Report</button>
+        </div>
+    }
+
+    @if (selectedReport == "yearly")
+    {
+        <div class="custom-date-range" style="margin-bottom: 18px;">
+            <label>Year:
+                <select @bind="selectedYearlyYear">
+                    @foreach (var year in AvailableYears)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </label>
+            <button class="fetch-btn" @onclick="LoadReports">Show Report</button>
+        </div>
+    }
+
+    @if (selectedReport == "custom")
+    {
+        <div class="custom-date-range" style="margin-bottom: 18px;">
+            <label>From:
+                <input type="date" @bind="fromDate" />
+            </label>
+            <label>To:
+                <input type="date" @bind="toDate" />
+            </label>
+            <button class="fetch-btn" @onclick="LoadReports" disabled="@(fromDate == null || toDate == null)">Show Report</button>
+        </div>
+    }
+
+    @if (showReport)
+    {
+        <div class="report-results" style="width: 100%;">
+            @if (isLoading)
+            {
+                <div>Loading report data...</div>
+            }
+            else if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div style="color: #c62828; font-weight: 600;">@errorMessage</div>
+            }
+            else if (!FilteredRows.Any())
+            {
+                <div>No records found for the selected filters.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table daybook-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Voucher</th>
+                                <th>Inv No</th>
+                                <th>Party</th>
+                                <th>Payment Mode</th>
+                                <th style="text-align:right;">Tax Amt</th>
+                                <th style="text-align:right;">Bill Amt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in PagedRows)
+                            {
+                                <tr>
+                                    <td>@FormatDate(row.Date)</td>
+                                    <td>@row.VchType</td>
+                                    <td>@row.InvNo</td>
+                                    <td>@row.Party</td>
+                                    <td>@row.Mop</td>
+                                    <td style="text-align:right;">@((row.TaxAmt ?? 0).ToString("N2"))</td>
+                                    <td style="text-align:right;">@((row.BillAmt ?? 0).ToString("N2"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 12px; gap: 12px;">
+                    <div>
+                        Rows:
+                        <select @onchange="OnRowsPerPageChanged" value="@RowsPerPage">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; align-items:center; gap: 10px;">
+                        <button class="fetch-btn" @onclick="PrevPage" disabled="@(CurrentPage <= 1)">Prev</button>
+                        <span>Page @CurrentPage of @Math.Max(TotalPages, 1)</span>
+                        <button class="fetch-btn" @onclick="NextPage" disabled="@(CurrentPage >= TotalPages)">Next</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @code { private int _selectedWeekYear = DateTime.Today.Year;
+    private int selectedWeekYear
+    {
+        get => _selectedWeekYear;
+        set
+        {
+            if (_selectedWeekYear != value)
+            {
+                _selectedWeekYear = value;
+                selectedWeekIndex = -1;
+            }
+        }
+    }
+    private int selectedWeekIndex = -1;
+    private List<int> AvailableYears => Enumerable.Range(DateTime.Today.Year - 5, 6).ToList();
+
+    // Month selection support
+    private static readonly string[] MonthNames = new[]
+    {
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    };
+    private int selectedMonthIndex = -1;
+    private int selectedMonthYear = DateTime.Today.Year;
+    private int selectedYearlyYear = DateTime.Today.Year;
+
+    private List<string> WeekRanges => GetWeekRanges(selectedWeekYear);
+
+
+    private List<string> GetWeekRanges(int year)
+    {
+        var weeks = new List<string>();
+        var jan1 = new DateTime(year, 1, 1);
+        var start = jan1;
+        // Move to first Monday (ISO week)
+        if (start.DayOfWeek != DayOfWeek.Monday)
+            start = start.AddDays((8 - (int)start.DayOfWeek) % 7);
+        while (start.Year == year || (start.Year == year + 1 && start.DayOfWeek != DayOfWeek.Monday))
+        {
+            var end = start.AddDays(6);
+            if (end.Year > year) end = new DateTime(year, 12, 31);
+            weeks.Add($"{start:dd MMM} - {end:dd MMM}");
+            start = start.AddDays(7);
+            if (start.Year > year) break;
+        }
+        return weeks;
+    }
+    private bool showReport = false;
+    private bool isLoading = false;
+    private string? errorMessage = null;
+    private List<SalesReportItem> reportRows = new();
+
+    private void SelectReport(string reportType)
+    {
+        selectedReport = reportType;
+        showReport = false;
+        reportRows = new();
+        errorMessage = null;
+    }
+
+    private IEnumerable<SalesReportItem> FilteredRows
+    {
+        get
+        {
+            IEnumerable<SalesReportItem> rows = reportRows;
+            if (!string.IsNullOrWhiteSpace(selectedPaymentMode))
+            {
+                rows = rows.Where(r =>
+                    !string.IsNullOrWhiteSpace(r.Mop) &&
+                    string.Equals(r.Mop.Trim(), selectedPaymentMode.Trim(), StringComparison.OrdinalIgnoreCase));
+            }
+            if (selectedReport == "custom" && fromDate.HasValue && toDate.HasValue)
+            {
+                rows = rows.Where(r =>
+                {
+                    var dt = ParseDate(r.Date);
+                    return dt.HasValue && dt.Value.Date >= fromDate.Value.Date && dt.Value.Date <= toDate.Value.Date;
+                });
+            }
+            else if (selectedReport == "daily")
+            {
+                var today = DateTime.Today;
+                rows = rows.Where(r =>
+                {
+                    var dt = ParseDate(r.Date);
+                    return dt.HasValue && dt.Value.Date == today;
+                });
+            }
+            else if (selectedReport == "weekly" && selectedWeekIndex >= 0 && WeekRanges.Count > selectedWeekIndex)
+            {
+                // Parse the selected week range string (e.g., "29 Dec - 31 Dec")
+                var range = WeekRanges[selectedWeekIndex];
+                var parts = range.Split('-');
+                if (parts.Length == 2)
+                {
+                    var year = selectedWeekYear;
+                    var startStr = parts[0].Trim() + " " + year;
+                    var endStr = parts[1].Trim() + " " + year;
+                    if (DateTime.TryParse(startStr, out var weekStart) && DateTime.TryParse(endStr, out var weekEnd))
+                    {
+                        rows = rows.Where(r =>
+                        {
+                            var dt = ParseDate(r.Date);
+                            return dt.HasValue && dt.Value.Date >= weekStart.Date && dt.Value.Date <= weekEnd.Date;
+                        });
+                    }
+                }
+            }
+            else if (selectedReport == "monthly" && selectedMonthIndex >= 0)
+            {
+                var month = selectedMonthIndex + 1;
+                var year = selectedMonthYear;
+                rows = rows.Where(r =>
+                {
+                    var dt = ParseDate(r.Date);
+                    return dt.HasValue && dt.Value.Month == month && dt.Value.Year == year;
+                });
+            }
+            else if (selectedReport == "yearly")
+            {
+                var year = selectedYearlyYear;
+                rows = rows.Where(r =>
+                {
+                    var dt = ParseDate(r.Date);
+                    return dt.HasValue && dt.Value.Year == year;
+                });
+            }
+            return rows;
+        }
+    }
+  private const string AppID = "GFW79L496PM4557UD3KEERR0W";
+    // Pagination properties and methods
+    private int CurrentPage { get; set; } = 1;
+    private int RowsPerPage { get; set; } = 25;
+    private int TotalPages => (int)Math.Ceiling((FilteredRows?.Count() ?? 0) / (double)RowsPerPage);
+    private IEnumerable<SalesReportItem> PagedRows => FilteredRows?.Skip((CurrentPage - 1) * RowsPerPage).Take(RowsPerPage) ?? Enumerable.Empty<SalesReportItem>();
+
+    private void PrevPage()
+    {
+        if (CurrentPage > 1)
+            CurrentPage--;
+    }
+
+    private void NextPage()
+    {
+        if (CurrentPage < TotalPages)
+            CurrentPage++;
+    }
+
+    private void OnRowsPerPageChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var newSize))
+        {
+            RowsPerPage = newSize;
+            CurrentPage = 1;
+        }
+    }
+
+    // Reset to first page when data changes
+    protected override async Task OnParametersSetAsync()
+    {
+        CurrentPage = 1;
+        await base.OnParametersSetAsync();
+    }
+
+    private async Task LoadReports()
+    {
+        showReport = true;
+        isLoading = true;
+        errorMessage = null;
+        reportRows = new();
+        var company = CompanyService.SelectedCompany;
+        if (company == null)
+        {
+            errorMessage = "No company selected. Please select a company to view reports.";
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+        try
+        {
+            // 1. Load initial data from GetJson API, then filter in UI by selected conditions.
+            string url;
+            HttpRequestMessage postRequest;
+            Console.WriteLine($"[LOG] Calling GetJson API: {ApiConstants.BaseUrl}/App/GetJson");
+            url = $"{ApiConstants.BaseUrl}/App/GetJson";
+            var requestBody = new { vchrType = selectedVoucher };
+            var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
+            postRequest = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+            };
+
+            // Add company headers
+            if (!string.IsNullOrEmpty(company.LicenceKey))
+                postRequest.Headers.Add("CdKey", company.LicenceKey);
+            if (!string.IsNullOrEmpty(company.CompanyCode))
+                postRequest.Headers.Add("CompanyCode", company.CompanyCode);
+
+            var response = await Http.SendAsync(postRequest);
+            if (!response.IsSuccessStatusCode)
+            {
+                
+                isLoading = false;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            var jsonData = await response.Content.ReadAsStringAsync();
+            var parseError = string.Empty;
+            reportRows = DeserializeReportRows(jsonData, out parseError);
+
+            // 2. If no matching rows after applying UI filters, call DataRequest as fallback.
+            if (!FilteredRows.Any())
+            {
+                var fallbackRows = await LoadReportsFromDataRequestAsync(company.LicenceKey, company.CompanyCode);
+                if (fallbackRows.Any())
+                {
+                    reportRows = fallbackRows;
+                }
+            }
+
+            // 3. Final state message when no records match conditions in either source.
+            if (!FilteredRows.Any())
+            {
+                errorMessage = "Data not found";
+            }
+            else
+            {
+                errorMessage = null;
+                CurrentPage = 1;
+            }
+
+            // Keep parse diagnostics only when there is no data and no fallback result.
+            if (string.IsNullOrWhiteSpace(errorMessage) && !string.IsNullOrWhiteSpace(parseError))
+            {
+                Console.WriteLine($"[LOG] GetJson parse warning: {parseError}");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task<List<SalesReportItem>> LoadReportsFromDataRequestAsync(string? licenceKey, string? companyCode)
+    {
+        var (reqFromDate, reqToDate) = GetRequestedDateRange();
+
+        var dataRequest = new DataRequest
+        {
+            APPID = AppID,
+            UserId = UserSession.UserId ?? string.Empty,
+            MobileNo = UserSession.MobileNo ?? string.Empty,
+            VchType = selectedVoucher,
+            FilterCondition = new FilterConditionModel
+            {
+                FromDate = reqFromDate?.ToString("yyyy-MM-dd"),
+                ToDate = reqToDate?.ToString("yyyy-MM-dd"),
+                VchType = selectedVoucher,
+                PaymentMode = selectedPaymentMode
+            },
+            SyncStatus = 0,
+            CreatedFrom = "WEB"
+        };
+
+        var url = $"{ApiConstants.BaseUrl}/Mobile/DataRequest";
+        var json = System.Text.Json.JsonSerializer.Serialize(dataRequest);
+        var postRequest = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+        };
+
+        if (!string.IsNullOrEmpty(licenceKey))
+            postRequest.Headers.Add("CdKey", licenceKey);
+        if (!string.IsNullOrEmpty(companyCode))
+            postRequest.Headers.Add("CompanyCode", companyCode);
+
+        var token = await _tokenService.GetTokenAsync();
+         if (string.IsNullOrEmpty(token))
+        {
+            errorMessage = "Authorization token is missing. Please login again.";
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+            //return;
+        }
+        postRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+    var response = await Http.SendAsync(postRequest);
+        if (!response.IsSuccessStatusCode)
+        {
+            return new List<SalesReportItem>();
+        }
+
+        var jsonData = await response.Content.ReadAsStringAsync();
+        return DeserializeReportRows(jsonData, out _);
+    }
+
+    private (DateTime? FromDate, DateTime? ToDate) GetRequestedDateRange()
+    {
+        DateTime? reqFromDate = fromDate;
+        DateTime? reqToDate = toDate;
+
+        if (selectedReport == "daily")
+        {
+            reqFromDate = DateTime.Today;
+            reqToDate = DateTime.Today;
+        }
+        else if (selectedReport == "weekly" && selectedWeekIndex >= 0 && WeekRanges.Count > selectedWeekIndex)
+        {
+            var range = WeekRanges[selectedWeekIndex];
+            var parts = range.Split('-');
+            if (parts.Length == 2)
+            {
+                var year = selectedWeekYear;
+                var startStr = parts[0].Trim() + " " + year;
+                var endStr = parts[1].Trim() + " " + year;
+                if (DateTime.TryParse(startStr, out var weekStart) && DateTime.TryParse(endStr, out var weekEnd))
+                {
+                    reqFromDate = weekStart;
+                    reqToDate = weekEnd;
+                }
+            }
+        }
+        else if (selectedReport == "monthly" && selectedMonthIndex >= 0)
+        {
+            var year = selectedMonthYear;
+            var month = selectedMonthIndex + 1;
+            reqFromDate = new DateTime(year, month, 1);
+            reqToDate = new DateTime(year, month, DateTime.DaysInMonth(year, month));
+        }
+        else if (selectedReport == "yearly")
+        {
+            var year = selectedYearlyYear;
+            reqFromDate = new DateTime(year, 1, 1);
+            reqToDate = new DateTime(year, 12, 31);
+        }
+
+        return (reqFromDate, reqToDate);
+    }
+
+    private List<SalesReportItem> DeserializeReportRows(string jsonData, out string parseError)
+    {
+        parseError = string.Empty;
+        var rows = new List<SalesReportItem>();
+
+        var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        options.Converters.Add(new FlexibleDecimalConverter());
+
+        if (string.IsNullOrWhiteSpace(jsonData))
+        {
+            return rows;
+        }
+
+        var trimmed = jsonData.Trim();
+        if (!trimmed.StartsWith("[") || !trimmed.EndsWith("]"))
+        {
+            parseError = "API did not return a JSON array.";
+            return rows;
+        }
+
+        try
+        {
+            rows = System.Text.Json.JsonSerializer.Deserialize<List<SalesReportItem>>(trimmed, options) ?? new List<SalesReportItem>();
+            return rows;
+        }
+        catch
+        {
+            try
+            {
+                var probe = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(trimmed, options);
+                if (probe.ValueKind == System.Text.Json.JsonValueKind.Array && probe.GetArrayLength() > 0 && probe[0].ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    var inner = probe[0].GetString();
+                    if (!string.IsNullOrEmpty(inner))
+                    {
+                        rows = System.Text.Json.JsonSerializer.Deserialize<List<SalesReportItem>>(inner, options) ?? new List<SalesReportItem>();
+                        return rows;
+                    }
+                }
+
+                parseError = "Failed to parse report data: Unexpected JSON structure.";
+            }
+            catch (Exception ex)
+            {
+                parseError = $"Failed to parse report data: {ex.Message}";
+            }
+        }
+
+        return rows;
+    }
+
+
+
+    private DateTime? ParseDate(string? dateStr)
+    {
+        if (string.IsNullOrWhiteSpace(dateStr)) return null;
+        string[] formats = { "dd-MM-yyyy", "dd/MM/yyyy", "yyyy-MM-dd", "yyyy/MM/dd", "MM-dd-yyyy", "MM/dd/yyyy" };
+        if (DateTime.TryParseExact(dateStr, formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt))
+            return dt;
+        if (DateTime.TryParse(dateStr, out dt))
+            return dt;
+        return null;
+    }
+
+    private string FormatDate(string? dateStr)
+    {
+        var dt = ParseDate(dateStr);
+        return dt?.ToString("dd-MMM-yyyy") ?? dateStr ?? "";
+    }
+}
+
+<style>
+    .reports-container {
+        width: 100vw;
+        min-height: 100vh;
+        margin: 0;
+        background: #fff;
+        border-radius: 0;
+        border: 2px solid #e0e0e0;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        padding: 0 0 0 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        overflow: auto;
+        box-sizing: border-box;
+    }
+    html, body {
+        overflow: hidden !important;
+        box-sizing: border-box;
+    }
+    .reports-heading {
+        text-align: center;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 28px;
+        color: #2d3a4a;
+        letter-spacing: 1px;
+    }
+    .voucher-select {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 18px;
+        border: none;
+        padding: 0;
+    }
+    .voucher-select-above {
+        margin-top: 10px;
+        margin-bottom: 28px;
+    }
+    .voucher-select label {
+        font-weight: 600;
+        font-size: 1.08rem;
+        color: #0078d4;
+        margin-right: 8px;
+    }
+    .voucher-select select {
+        padding: 7px 16px;
+        border-radius: 5px;
+        border: 2px solid #0078d4;
+        min-width: 140px;
+        font-size: 1rem;
+        width: auto;
+        max-width: 320px;
+        margin: 0;
+        background: #fff;
+        border-radius: 5px;
+        box-shadow: none;
+        border-color: #005fa3;
+    }
+    .voucher-select label {
+        font-weight: 600;
+        font-size: 1.08rem;
+        color: #0078d4;
+        margin-right: 8px;
+    }
+    .voucher-select select {
+        padding: 7px 16px;
+        border-radius: 5px;
+        border: 2px solid #0078d4;
+        min-width: 140px;
+        font-size: 1rem;
+        width: auto;
+        max-width: 320px;
+        margin: 0;
+        background: #fff;
+        border-radius: 5px;
+        box-shadow: none;
+        border-color: #005fa3;
+    }
+    .report-links {
+        margin-top: 24px;
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+        padding-left: 0;
+    }
+    .report-links ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        gap: 24px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+    .report-links li {
+        display: inline-block;
+    }
+    .report-btn {
+        display: inline-block;
+        padding-top: 16px;
+        border-top: 1px solid #e0e0e0;
+        padding: 12px 28px;
+        border-radius: 7px;
+        background: #f5f5f5;
+        color: #333;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1.08rem;
+        transition: background 0.2s, color 0.2s, border 0.2s;
+        border: 2px solid #e0e0e0;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+        min-width: 120px;
+        cursor: pointer;
+    }
+    .report-btn.active, .report-btn:hover:not(:disabled) {
+        background: #0078d4;
+        color: #fff;
+        border-color: #0078d4;
+    }
+    .report-btn:disabled {
+        pointer-events: none;
+        color: #aaa !important;
+        background: #f0f0f0 !important;
+        border-color: #e0e0e0 !important;
+    }
+    .custom-date-range {
+        display: flex;
+        gap: 18px;
+        align-items: center;
+        justify-content: center;
+        margin: 28px 0 18px 0;
+    }
+    .custom-date-range label {
+        font-weight: 500;
+        color: #2d3a4a;
+        font-size: 1.08rem;
+    }
+    .custom-date-range input[type="date"] {
+        padding: 6px 12px;
+        border-radius: 5px;
+        border: 1.5px solid #0078d4;
+        font-size: 1.08rem;
+        margin-left: 6px;
+    }
+    .fetch-btn {
+        padding: 8px 22px;
+        border-radius: 6px;
+        background: #0078d4;
+        color: #fff;
+        border: none;
+        font-weight: 600;
+        font-size: 1.08rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .fetch-btn:disabled {
+        background: #b3c7e6;
+        cursor: not-allowed;
+    }
+    .report-results {
+        margin-top: 24px;
+        background: #f8fbff;
+        border-radius: 8px;
+        border: 1.5px solid #e0e0e0;
+        padding: 24px;
+        min-height: 80px;
+        font-size: 1.08rem;
+        color: #222;
+    }
+    /* Enhanced Data Grid Styles */
+    .table.daybook-table {
+       width: 100%;
+    min-width: 1200px;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    }
+    .table.daybook-table th {
+        background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 700;
+        padding: 10px 8px;
+        border-bottom: 3px solid #1976d2;
+        text-align: left;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+    }
+    .table.daybook-table td {
+        background: #fafdff;
+        color: #222;
+        font-size: 0.98rem;
+        padding: 8px 8px;
+        border-bottom: 1.5px solid #e0e0e0;
+        vertical-align: middle;
+        transition: background 0.2s;
+    }
+    .table.daybook-table tr:last-child td {
+        border-bottom: none;
+    }
+    .table.daybook-table tbody tr:hover {
+        background: #e3f2fd;
+        transition: background 0.2s;
+    }
+    .table.daybook-table thead tr {
+        border-radius: 16px 16px 0 0;
+    }
+    .table.daybook-table tfoot tr {
+        background: #e3f2fd;
+        font-weight: 700;
+    }
+    .table-responsive {
+        border-radius: 16px;
+        overflow-x: scroll !important;
+        overflow-y: auto;
+        background: #fff;
+        margin-top: 18px;
+        box-shadow: 0 4px 24px rgba(25, 118, 210, 0.10);
+        padding: 8px 0 8px 0;
+        max-width: 100%;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        min-height: 60px;
+    }
+
+    .table-responsive::-webkit-scrollbar {
+        height: 14px;
+        background: #f8fafc;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #bfc9d9;
+        border-radius: 8px;
+    }
+
+    .table.daybook-table {
+        min-width: 1400px;
+        width: max-content;
+    }
+    /* Week Selector Spacing */
+    .week-select-range {
+        margin-top: 18px !important;
+        margin-bottom: 18px;
+        display: flex;
+        gap: 18px;
+        align-items: center;
+        justify-content: center;
+        background: #f5faff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(25, 118, 210, 0.06);
+        padding: 16px 24px 10px 24px;
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .week-select-range label {
+        font-weight: 600;
+        color: #1976d2;
+        font-size: 1.08rem;
+    }
+    .week-select-range select {
+        margin-left: 8px;
+        padding: 7px 16px;
+        border-radius: 5px;
+        border: 2px solid #1976d2;
+        font-size: 1.05rem;
+        background: #fff;
+        color: #1976d2;
+        font-weight: 600;
+    }
+    .fetch-btn {
+        padding: 10px 28px;
+        border-radius: 8px;
+        background: #1976d2;
+        color: #fff;
+        border: none;
+        font-weight: 700;
+        font-size: 1.08rem;
+        margin-left: 10px;
+        box-shadow: 0 2px 8px rgba(25, 118, 210, 0.10);
+        transition: background 0.2s;
+    }
+    .fetch-btn:disabled {
+        background: #b3c7e6;
+        cursor: not-allowed;
+    }
+</style>
+
+@* Add styling as needed *@
+</div>

@@ -1,0 +1,229 @@
+@page "/receipts/new"
+@page "/receipts/{ReceiptId:int}"
+@page "/receipts/{ReceiptId:int}/edit"
+
+@using System
+@using IBIZWebApp.Models
+@inject IBIZWebApp.Services.IReceiptService ReceiptService
+@inject IBIZWebApp.Services.IToastService ToastService
+@inject NavigationManager Navigation
+
+<div class="receipt-entry-container">
+    <div class="entry-header">
+        <h2>
+            @if (IsCreate) { <span>New Receipt</span> }
+            else if (IsViewMode) { <span>Receipt Details</span> }
+            else { <span>Edit Receipt</span> }
+        </h2>
+        <div class="header-actions">
+            @if (IsViewMode && ReceiptId.HasValue)
+            {
+                <button class="btn btn-primary" @onclick="GoToEdit">
+                    ✏️ Edit Receipt
+                </button>
+            }
+            <button class="btn btn-secondary" @onclick='() => Navigation.NavigateTo("/receipts/list")'>
+                ← Back to List
+            </button>
+        </div>
+    </div>
+
+    @if (IsLoading)
+    {
+        <LoadingSpinner IsVisible="true" Message="Loading receipt..." />
+    }
+    else if (NotFound)
+    {
+        <div class="not-found-card">
+            <p>Receipt not found.</p>
+            <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/receipts/list")'>Back to List</button>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="@Model" OnValidSubmit="HandleSave">
+            <DataAnnotationsValidator />
+
+            <div class="form-card">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Order ID</label>
+                        @if (IsViewMode && Model.OrderId > 0)
+                        {
+                            <a href="/sales-order-entry/@Model.OrderId?view=true" class="form-control-link" style="display:inline-block;padding:8px 0;cursor:pointer;color:#007bff;text-decoration:underline;">
+                                @Model.OrderId
+                            </a>
+                        }
+                        else
+                        {
+                            <InputNumber class="form-control" @bind-Value="Model.OrderId" disabled="@IsViewMode" />
+                        }
+                        <ValidationMessage For="() => Model.OrderId" />
+                    </div>
+                    <div class="form-group">
+                        <label>Receipt No</label>
+                        <InputText class="form-control" @bind-Value="Model.ReceiptNo" disabled="@IsViewMode" />
+                        <ValidationMessage For="() => Model.ReceiptNo" />
+                    </div>
+                    <div class="form-group">
+                        <label>Receipt Date</label>
+                        <InputDate class="form-control" @bind-Value="Model.ReceiptDate" disabled="@IsViewMode" />
+                        <ValidationMessage For="() => Model.ReceiptDate" />
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <InputNumber class="form-control" @bind-Value="Model.Amount" disabled="@IsViewMode" />
+                        <ValidationMessage For="() => Model.Amount" />
+                    </div>
+                    <div class="form-group span-2">
+                        <label>Customer Name</label>
+                        <InputText class="form-control" @bind-Value="Model.CustomerName" disabled="@IsViewMode" />
+                        <ValidationMessage For="() => Model.CustomerName" />
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <InputSelect class="form-control" @bind-Value="Model.Status" disabled="@IsViewMode">
+                            <option value="Pending">Pending</option>
+                            <option value="Received">Received</option>
+                            <option value="Reconciled">Reconciled</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </InputSelect>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Mode</label>
+                        <InputSelect class="form-control" @bind-Value="Model.PaymentMode" disabled="@IsViewMode">
+                            <option value="Cash">Cash</option>
+                            <option value="Bank">Bank</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Online">Online</option>
+                        </InputSelect>
+                    </div>
+                    <div class="form-group span-2">
+                        <label>Reference No</label>
+                        <InputText class="form-control" @bind-Value="Model.ReferenceNo" disabled="@IsViewMode" />
+                    </div>
+                    <div class="form-group">
+                        <label>Created By</label>
+                        <InputText class="form-control" @bind-Value="Model.CreatedBy" disabled="@IsViewMode" />
+                    </div>
+                    <div class="form-group">
+                        <label>Created Date</label>
+                        <input type="text" class="form-control" value="@Model.CreatedDate.ToString("yyyy-MM-dd HH:mm")" disabled />
+                    </div>
+                    <div class="form-group span-full">
+                        <label>Narration</label>
+                        <InputTextArea class="form-control" @bind-Value="Model.Narration" rows="3" disabled="@IsViewMode" />
+                        <ValidationMessage For="() => Model.Narration" />
+                    </div>
+                </div>
+            </div>
+
+            @if (!IsViewMode)
+            {
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-success" disabled="@IsSaving">
+                        @(IsSaving ? "Saving..." : "💾 Save")
+                    </button>
+                    <button type="button" class="btn btn-secondary" @onclick='() => Navigation.NavigateTo("/receipts/list")'>
+                        Cancel
+                    </button>
+                </div>
+            }
+        </EditForm>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int? ReceiptId { get; set; }
+
+    private Receipt Model = new();
+    private bool IsLoading;
+    private bool IsSaving;
+    private bool NotFound;
+
+    private bool IsCreate => !ReceiptId.HasValue;
+    private bool IsViewMode => ReceiptId.HasValue && !Navigation.Uri.EndsWith("/edit", StringComparison.OrdinalIgnoreCase);
+
+    private void GoToEdit() => Navigation.NavigateTo($"/receipts/{ReceiptId}/edit");
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsCreate)
+        {
+            // Auto-populate defaults for new receipt
+            Model.ReceiptNo = $"RCP-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
+            Model.ReceiptDate = DateTime.Now;
+            Model.Status = "Pending";
+            Model.PaymentMode = "Cash";
+            Model.CreatedBy = "System";
+            Model.CreatedDate = DateTime.Now;
+        }
+        else if (ReceiptId.HasValue)
+        {
+            IsLoading = true;
+            try
+            {
+                var apiResult = await ReceiptService.GetReceiptByIdAsync(ReceiptId.Value);
+                if (apiResult.Status == "success" && apiResult.Data != null)
+                {
+                    Model = apiResult.Data;
+                }
+                else
+                {
+                    NotFound = true;
+                }
+            }
+            catch
+            {
+                NotFound = true;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+
+            if (NotFound)
+            {
+                await ToastService.ShowErrorAsync("Receipt not found.");
+                Navigation.NavigateTo("/receipts/list");
+            }
+        }
+    }
+
+    private async Task HandleSave()
+    {
+        IsSaving = true;
+        try
+        {
+            bool ok;
+            if (IsCreate)
+            {
+                ok = await ReceiptService.CreateReceiptAsync(Model);
+            }
+            else
+            {
+                Model.ModifiedDate = DateTime.Now;
+                ok = await ReceiptService.UpdateReceiptAsync(Model);
+            }
+
+            if (ok)
+            {
+                await ToastService.ShowSuccessAsync(IsCreate ? "Receipt created successfully!" : "Receipt updated successfully!");
+                Navigation.NavigateTo("/receipts/list");
+            }
+            else
+            {
+                await ToastService.ShowErrorAsync("Failed to save receipt.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowErrorAsync($"Save failed: {ex.Message}");
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+}

@@ -1,0 +1,519 @@
+@page "/receipts"
+@using IBIZWebApp.Models
+@inject IBIZWebApp.Services.IReceiptVoucherService VoucherService
+@inject IBIZWebApp.Services.ISalesDropdownService DropdownService
+@inject IBIZWebApp.Services.IToastService ToastService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="receipt-voucher-container">
+    <!-- Header -->
+    <div class="voucher-header">
+        <h2>Receipt Voucher</h2>
+        <button class="btn btn-outline-primary" @onclick='() => Navigation.NavigateTo("/receipts/list")'>
+            <span>📋</span> Receipt CRUD
+        </button>
+    </div>
+
+    <!-- Receipt Header Fields -->
+    <div class="voucher-form-card">
+        <div class="voucher-grid">
+            <!-- Row 1 -->
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" class="form-control" @bind="Voucher.Date" />
+            </div>
+            <div class="form-group">
+                <label>Voucher No</label>
+                <input type="text" class="form-control" value="@Voucher.VoucherNo" readonly />
+            </div>
+            <div class="form-group">
+                <label>Ref No</label>
+                <input type="text" class="form-control" @bind="Voucher.RefNo" placeholder="Reference..." />
+            </div>
+            <div class="form-group">
+                <label>Cost Centre</label>
+                <select class="form-control" @bind="Voucher.CostCentreId">
+                    @foreach (var cc in CostCentres)
+                    {
+                        <option value="@cc.CostCentreId">@cc.Name</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="form-group">
+                <label><span class="dr-label">Dr</span> Debit Ledger</label>
+                <select class="form-control" @bind="Voucher.DebitLedgerId">
+                    <option value="0">-- Select --</option>
+                    @foreach (var l in CashBankLedgers)
+                    {
+                        if (!string.IsNullOrEmpty(l.LedgerName))
+                        {
+                            <option value="@l.LedgerId">
+                                @l.LedgerName@if (!string.IsNullOrEmpty(l.LedgerType) && l.LedgerType != l.LedgerName) { <text> (@l.LedgerType)</text> }
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label><span class="cr-label">Cr</span> Credit Ledger (Customer)</label>
+                <select class="form-control" @bind="Voucher.CreditLedgerId" @bind:after="OnCustomerChangedAsync">
+                    <option value="0">-- Select Customer --</option>
+                    @foreach (var c in CustomerList)
+                    {
+                        <option value="@c.LID">@c.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Current Balance</label>
+                <input type="text" class="form-control balance-display @(CustomerBalance >= 0 ? "cr-balance" : "dr-balance")"
+                       value="@(Voucher.CreditLedgerId > 0 ? (CustomerBalance >= 0 ? $"Cr ₹{CustomerBalance:N2}" : $"Dr ₹{Math.Abs(CustomerBalance):N2}") : "")" readonly />
+            </div>
+            <div class="form-group">
+                <label>Amount</label>
+                <input type="number" class="form-control amount-input" @bind="Voucher.Amount" @bind:after="OnAmountChanged" step="0.01" min="0" />
+            </div>
+
+            <!-- Row 3 -->
+            <div class="form-group">
+                <label>Receipt Mode</label>
+                <select class="form-control" @bind="Voucher.ReceiptMode">
+                    <option value="Cash">Cash</option>
+                    <option value="Bank">Bank</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Online">Online</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Invoice Mode</label>
+                <div class="toggle-group">
+                    <button class="toggle-btn @(IsAutoMode ? "active" : "")" @onclick="async () => await SetInvoiceMode(true)">Auto</button>
+                    <button class="toggle-btn @(!IsAutoMode ? "active" : "")" @onclick="async () => await SetInvoiceMode(false)">Manual</button>
+                </div>
+            </div>
+            <div class="form-group span-2">
+                <label>Narration</label>
+                <textarea class="form-control" @bind="Voucher.Narration" rows="2" placeholder="Optional notes..."></textarea>
+            </div>
+        </div>
+
+        <!-- Cheque Sub-Form -->
+        @if (Voucher.ReceiptMode == "Cheque")
+        {
+            <div class="cheque-section">
+                <h4>Cheque Details</h4>
+                <div class="cheque-grid">
+                    <div class="form-group">
+                        <label>Cheque No</label>
+                        <input type="text" class="form-control" @bind="Voucher.ChequeDetails.ChequeNo" />
+                    </div>
+                    <div class="form-group">
+                        <label>Issuing Bank</label>
+                        <input type="text" class="form-control" @bind="Voucher.ChequeDetails.IssuingBank" />
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Invoice Allocation Grid: Manual Mode Only -->
+    @if (!IsAutoMode)
+    {
+        <div class="allocation-card">
+            <h3>Invoice Allocation (Manual)</h3>
+
+            @if (Voucher.Allocations.Any())
+            {
+                <div class="table-responsive">
+                    <table class="allocation-table styled-grid">
+                        <thead>
+                            <tr>
+                                <th>InvNo</th>
+                                <th>InvDate</th>
+                                <th>Credit Days</th>
+                                <th>Bill Amt</th>
+                                <th>Current Amt</th>
+                                <th>Sa Amount</th>
+                                <th>Select</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Voucher.Allocations)
+                            {
+                                <tr>
+                                    <td>@item.InvoiceId</td>
+                                    <td>@item.InvoiceDate.ToString("dd-MMM-yyyy")</td>
+                                    <td style="text-align:center">@item.CreditDays</td>
+                                    <td style="text-align:right">₹@item.BillAmount.ToString("N2")</td>
+                                    <td style="text-align:right">₹@item.CurrentAmount.ToString("N2")</td>
+                                    <td>
+                                        <input type="number" class="form-control sa-input" value="@item.SaAmount"
+                                               @onchange="e => OnManualSaAmountChanged(item, e)" step="0.01" min="0" max="@item.CurrentAmount" style="width:80px;" />
+                                    </td>
+                                    <td style="text-align:center">
+                                        <input type="checkbox" checked="@(item.Order > 0)" @onchange="e => OnAllocationSelectedChanged(item, e)" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <button class="btn btn-primary" type="button" @onclick="OnInvoiceOkClicked">OK</button>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info mt-2">No pending bills found for this customer.</div>
+            }
+        </div>
+    }
+
+    <!-- Totals Bar -->
+    <div class="totals-bar">
+        <div class="total-item">
+            <span class="total-label">Total Amount</span>
+            <span class="total-value">₹@Voucher.Amount.ToString("N2")</span>
+        </div>
+        <div class="total-item">
+            <span class="total-label">Total Allocation</span>
+            <span class="total-value">₹@TotalAllocation.ToString("N2")</span>
+        </div>
+        <div class="total-item @(Unallocated > 0 ? "unallocated-warning" : "")">
+            <span class="total-label">Unallocated</span>
+            <span class="total-value">₹@Unallocated.ToString("N2")</span>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <button class="btn btn-success" @onclick="SaveVoucher" disabled="@IsSaving">
+            @(IsSaving ? "Saving..." : "💾 Save")
+        </button>
+        <button class="btn btn-info" @onclick="PrintVoucher">🖨️ Print</button>
+        <button class="btn btn-secondary" @onclick="ResetVoucher">🔄 Cancel / New Voucher</button>
+    </div>
+</div>
+
+@code {
+    private ReceiptVoucher Voucher = new() { CreditLedgerId = 0m };
+    private List<CostCentre> CostCentres = new();
+    private List<LedgerOption> CashBankLedgers = new();
+    private List<IBIZWebApp.Models.CustomerListItem> CustomerList = new();
+    private decimal CustomerBalance;
+    private bool IsAutoMode = true;
+    private bool IsSaving;
+
+   private decimal TotalAllocation => Voucher.Allocations.Sum(a => a.CurrentAmount);
+    private decimal Unallocated => TotalAllocation-Voucher.Amount;
+    private string SelectedCustomerName =>
+        CustomerList.FirstOrDefault(c => c.LID == Voucher.CreditLedgerId)?.Name ?? "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDropdowns();
+        Voucher.VoucherNo = await VoucherService.GenerateVoucherNoAsync();
+    }
+
+    private async Task LoadDropdowns()
+    {
+        var ccTask = VoucherService.GetCostCentresAsync();
+        var debitTask = VoucherService.GetCashBankLedgersAsync();
+        var customerTask = DropdownService.GetCustomersAsync();
+        await Task.WhenAll(ccTask, debitTask, customerTask);
+
+        CostCentres = ccTask.Result;
+        CashBankLedgers = debitTask.Result;
+        CustomerList = customerTask.Result;
+
+        if (CostCentres.Any()) Voucher.CostCentreId = CostCentres[0].CostCentreId;
+    }
+
+    private List<InvoiceAllocation> GetSelectedAllocations()
+        => Voucher.Allocations.Where(a => a.Order > 0 && a.SaAmount > 0 && a.InvoiceId != 0).ToList();
+
+    private void OnAllocationSelectedChanged(InvoiceAllocation item, ChangeEventArgs e)
+{
+    var isChecked = e.Value is bool b && b;
+    item.Order = isChecked ? 1 : 0;
+    if (isChecked && item.SaAmount == 0)
+    {
+        item.SaAmount = item.CurrentAmount; // or item.BillAmount if you prefer
+    }
+    if (!isChecked)
+    {
+        item.SaAmount = 0;
+    }
+}
+
+    private async Task OnInvoiceOkClicked()
+    {
+        var selectedAllocations = GetSelectedAllocations();
+        decimal totalSaAmount = selectedAllocations.Sum(a => a.SaAmount);
+        if (selectedAllocations.Count == 0)
+        {
+            await ToastService.ShowErrorAsync("Please select at least one invoice.");
+            return;
+        }
+        if (totalSaAmount != Voucher.Amount)
+        {
+            await ToastService.ShowErrorAsync("Voucher amount must match selected invoice allocation.");
+            return;
+        }
+        await ToastService.ShowSuccessAsync("Invoice allocation OK.");
+    }
+
+    private async Task OnCustomerChangedAsync()
+    {
+        await JS.InvokeVoidAsync("console.log", "[OnCustomerChangedAsync] Fired");
+        var ledgerId = Voucher.CreditLedgerId;
+        await JS.InvokeVoidAsync("console.log", $"[OnCustomerChangedAsync] ledgerId value before if: {ledgerId}");
+        if (ledgerId > 0)
+        {
+            CustomerBalance = await VoucherService.GetLedgerBalanceAsync((int)ledgerId);
+            await JS.InvokeVoidAsync("console.log", $"[OnCustomerChangedAsync] Calling GetPendingBillsAsync for LedgerId: {ledgerId}, Request: {{ LedgerId: {ledgerId} }}");
+            Voucher.Allocations = await VoucherService.GetPendingBillsAsync((int)ledgerId);
+            if (IsAutoMode) AutoAllocate();
+            StateHasChanged();
+        }
+        else
+        {
+            Voucher.CreditLedgerId = 0;
+            CustomerBalance = 0;
+            Voucher.Allocations.Clear();
+            StateHasChanged();
+        }
+    }
+
+    private void OnAmountChanged()
+    {
+        if (IsAutoMode) AutoAllocate();
+    }
+
+    private async Task SetInvoiceMode(bool auto)
+    {
+        System.Diagnostics.Debug.WriteLine($"[SetInvoiceMode] Called with auto={auto}, LedgerId={Voucher.CreditLedgerId}");
+        IsAutoMode = auto;
+        if (auto)
+        {
+            AutoAllocate();
+        }
+        else
+        {
+            // Manual mode: fetch pending bills and map to allocations using DI ReceiptService
+            if (Voucher.CreditLedgerId > 0)
+            {
+                try
+                {
+                    await JS.InvokeVoidAsync("console.log", $"[SetInvoiceMode] Fetching pending bills for LedgerId: {Voucher.CreditLedgerId}");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SetInvoiceMode] JSInterop error: {ex.Message}");
+                }
+                var bills = await VoucherService.GetPendingBillsAsync((int)Voucher.CreditLedgerId);
+                try
+                {
+                    await JS.InvokeVoidAsync("console.log", $"[SetInvoiceMode] Pending bills fetched:", bills);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SetInvoiceMode] JSInterop error: {ex.Message}");
+                }
+                // Map PendingBill to InvoiceAllocation using correct property names
+                Voucher.Allocations = bills.Select(b => new InvoiceAllocation
+                {
+                    InvoiceId = b.InvoiceId,
+                    InvoiceNo = b.InvoiceNo,
+                    InvoiceDate = b.InvoiceDate,
+                    CreditDays = b.CreditDays,
+                    BillAmount = b.BillAmount,
+                    CurrentAmount = b.CurrentAmount,
+                    SaAmount = 0,
+                    Order = 0
+                }).ToList();
+            }
+            StateHasChanged();
+        }
+    }
+
+    private void AutoAllocate()
+{
+    if (Voucher.Amount <= 0 || Voucher.Allocations == null)
+        return;
+
+    decimal remaining = Voucher.Amount;
+
+    // FIFO: oldest first
+    var sortedBills = Voucher.Allocations
+        .OrderBy(x => x.InvoiceDate)
+        .ToList();
+
+    foreach (var bill in sortedBills)
+    {
+        if (remaining <= 0)
+        {
+            bill.SaAmount = 0;
+            continue;
+        }
+
+        var alloc = Math.Min(remaining, bill.CurrentAmount);
+
+        bill.SaAmount = alloc;
+
+        remaining -= alloc;
+    }
+
+    StateHasChanged();
+}
+
+    private void OnManualSaAmountChanged(InvoiceAllocation item, ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var val))
+        {
+            item.SaAmount = Math.Min(Math.Max(val, 0), item.CurrentAmount);
+        }
+    }
+
+    private void OnOrderChanged(InvoiceAllocation item, ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var val))
+        {
+            item.Order = Math.Max(val, 1);
+        }
+    }
+
+    private async Task SaveVoucher()
+    {
+        if (Voucher.DebitLedgerId == 0)
+        {
+            await ToastService.ShowErrorAsync("Please select a Debit Ledger.");
+            return;
+        }
+        if (Voucher.CreditLedgerId == 0)
+        {
+            await ToastService.ShowErrorAsync("Please select a Credit Ledger (Customer).");
+            return;
+        }
+        if (Voucher.Amount <= 0)
+        {
+            await ToastService.ShowErrorAsync("Amount must be greater than 0.");
+            return;
+        }
+
+        var selectedAllocations = GetSelectedAllocations();
+
+        if (selectedAllocations.Count == 0)
+        {
+            await ToastService.ShowErrorAsync("Please select at least one invoice.");
+            return;
+        }
+
+        if (selectedAllocations.Sum(a => a.SaAmount) != Voucher.Amount)
+        {
+            await ToastService.ShowErrorAsync("Voucher amount must match selected invoice allocation.");
+            return;
+        }
+
+        @* if (selectedAllocations.Count == 1)
+        {
+            var alloc = selectedAllocations[0];
+            if (alloc.SaAmount != alloc.BillAmount)
+            {
+                await ToastService.ShowErrorAsync("Total amount must be equal to the invoice amount.");
+                return;
+            }
+        } *@
+
+        IsSaving = true;
+        try
+        {
+            foreach (var alloc in selectedAllocations)
+            {
+                if (alloc.InvoiceId == 0 && !string.IsNullOrWhiteSpace(alloc.InvoiceNo) &&
+                    int.TryParse(alloc.InvoiceNo, out var parsedId))
+                {
+                    alloc.InvoiceId = parsedId;
+                }
+            }
+
+            var voucherToSave = new ReceiptVoucher
+            {
+                Date = Voucher.Date,
+                VoucherNo = Voucher.VoucherNo,
+                RefNo = Voucher.RefNo,
+                CostCentreId = Voucher.CostCentreId,
+                DebitLedgerId = Voucher.DebitLedgerId,
+                CreditLedgerId = Voucher.CreditLedgerId,
+                Amount = Voucher.Amount,
+                ReceiptMode = Voucher.ReceiptMode,
+                Narration = Voucher.Narration,
+                ChequeDetails = Voucher.ChequeDetails,
+                Allocations = selectedAllocations
+            };
+
+            await VoucherService.SaveReceiptVoucherAsync(voucherToSave);
+
+            var billStatusRequest = new IBIZWebApp.Models.BillAllocationRequest
+            {
+                LedgerId = Voucher.CreditLedgerId,
+                Allocations = selectedAllocations
+                    .Where(a => a.InvoiceId != 0)
+                    .Select(a => new IBIZWebApp.Models.LedgerBillStatusRequest
+                    {
+                        InvId = a.InvoiceId,
+                        InvNo = a.InvoiceNo,
+                        InvDate = a.InvoiceDate.ToString("yyyy-MM-dd"),
+                        CreditDays = a.CreditDays,
+                        BillAmt = a.BillAmount,
+                        LedgerId = Voucher.CreditLedgerId,
+                        CurrentAmt = a.CurrentAmount,
+                        SaAmount = a.SaAmount,
+                        VcType = Voucher.ReceiptMode,
+                        VchTypeID = 2,
+                        SettleStatus = 1
+                    })
+                    .ToList()
+            };
+
+            if (billStatusRequest.Allocations.Count == 0)
+            {
+                await ToastService.ShowErrorAsync("No valid invoice allocations to update bill status.");
+                return;
+            }
+
+            var statusResult = await VoucherService.UpdateLedgerBillStatusListAsync(billStatusRequest);
+            if (statusResult)
+            {
+                await ToastService.ShowSuccessAsync("Receipt voucher saved successfully!");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowErrorAsync($"Failed to save: {ex.Message}");
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task PrintVoucher()
+    {
+        await ToastService.ShowInfoAsync("Print preview not configured in current build.");
+    }
+
+    private async Task ResetVoucher()
+    {
+        Voucher = new ReceiptVoucher
+        {
+            VoucherNo = await VoucherService.GenerateVoucherNoAsync()
+        };
+        CustomerBalance = 0;
+        IsAutoMode = true;
+        if (CostCentres.Any()) Voucher.CostCentreId = CostCentres[0].CostCentreId;
+    }
+}

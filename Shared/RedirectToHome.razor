@@ -1,0 +1,7 @@
+@code {
+    [Inject] NavigationManager Navigation { get; set; } = default!;
+    protected override void OnInitialized()
+    {
+        Navigation.NavigateTo("/mobile-verification", true);
+    }
+}

@@ -1,0 +1,340 @@
+.receipt-voucher-container[b-kym9l34g4t] {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+}
+
+.voucher-header[b-kym9l34g4t] {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.voucher-header h2[b-kym9l34g4t] {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.4rem;
+}
+
+.voucher-form-card[b-kym9l34g4t] {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.voucher-grid[b-kym9l34g4t] {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.form-group[b-kym9l34g4t] {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-group label[b-kym9l34g4t] {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-control[b-kym9l34g4t] {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus[b-kym9l34g4t] {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52,152,219,0.15);
+}
+
+.span-2[b-kym9l34g4t] {
+    grid-column: span 2;
+}
+
+.dr-label[b-kym9l34g4t] {
+    background: #e74c3c;
+    color: white;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    margin-right: 4px;
+}
+
+.cr-label[b-kym9l34g4t] {
+    background: #27ae60;
+    color: white;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    margin-right: 4px;
+}
+
+.balance-display[b-kym9l34g4t] {
+    font-weight: 700;
+    background: #f8f9fa;
+}
+
+.cr-balance[b-kym9l34g4t] {
+    color: #27ae60;
+}
+
+.dr-balance[b-kym9l34g4t] {
+    color: #e74c3c;
+}
+
+.amount-input[b-kym9l34g4t] {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.toggle-group[b-kym9l34g4t] {
+    display: flex;
+    gap: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+.toggle-btn[b-kym9l34g4t] {
+    flex: 1;
+    padding: 8px 16px;
+    border: none;
+    background: #f0f0f0;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.toggle-btn.active[b-kym9l34g4t] {
+    background: #3498db;
+    color: white;
+}
+
+.toggle-btn:hover:not(.active)[b-kym9l34g4t] {
+    background: #e0e0e0;
+}
+
+/* Cheque Section */
+.cheque-section[b-kym9l34g4t] {
+    margin-top: 16px;
+    padding: 16px;
+    background: #fef9e7;
+    border-radius: 6px;
+    border: 1px solid #f4d03f;
+}
+
+.cheque-section h4[b-kym9l34g4t] {
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    color: #7d6608;
+}
+
+.cheque-grid[b-kym9l34g4t] {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Allocation Table */
+.allocation-card[b-kym9l34g4t] {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.allocation-card h3[b-kym9l34g4t] {
+    margin: 0 0 12px;
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.table-responsive[b-kym9l34g4t] {
+    overflow-x: auto;
+}
+
+.allocation-table[b-kym9l34g4t] {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.allocation-table th[b-kym9l34g4t] {
+    background: #f8f9fa;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #555;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.allocation-table td[b-kym9l34g4t] {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.allocation-table tr:hover[b-kym9l34g4t] {
+    background: #f0f7ff;
+}
+
+.amt[b-kym9l34g4t] {
+    text-align: right;
+    font-family: 'Consolas', monospace;
+}
+
+.sa-input[b-kym9l34g4t], .order-input[b-kym9l34g4t] {
+    width: 100px;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Totals Bar */
+.totals-bar[b-kym9l34g4t] {
+    display: flex;
+    gap: 20px;
+    background: white;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    justify-content: flex-end;
+}
+
+.total-item[b-kym9l34g4t] {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 140px;
+}
+
+.total-label[b-kym9l34g4t] {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #888;
+    font-weight: 600;
+}
+
+.total-value[b-kym9l34g4t] {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2c3e50;
+    font-family: 'Consolas', monospace;
+}
+
+.unallocated-warning .total-value[b-kym9l34g4t] {
+    color: #e67e22;
+}
+
+/* Action Buttons */
+.action-buttons[b-kym9l34g4t] {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn[b-kym9l34g4t] {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn:hover[b-kym9l34g4t] {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.btn-success[b-kym9l34g4t] {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-info[b-kym9l34g4t] {
+    background: #3498db;
+    color: white;
+}
+
+.btn-secondary[b-kym9l34g4t] {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-outline-primary[b-kym9l34g4t] {
+    background: transparent;
+    border: 2px solid #3498db;
+    color: #3498db;
+}
+
+.btn-outline-primary:hover[b-kym9l34g4t] {
+    background: #3498db;
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 1099px) {
+    .voucher-grid[b-kym9l34g4t] {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 699px) {
+    .receipt-voucher-container[b-kym9l34g4t] {
+        padding: 10px;
+    }
+
+    .voucher-grid[b-kym9l34g4t] {
+        grid-template-columns: 1fr;
+    }
+
+    .span-2[b-kym9l34g4t] {
+        grid-column: span 1;
+    }
+
+    .cheque-grid[b-kym9l34g4t] {
+        grid-template-columns: 1fr;
+    }
+
+    .totals-bar[b-kym9l34g4t] {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .total-item[b-kym9l34g4t] {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .action-buttons[b-kym9l34g4t] {
+        flex-direction: column;
+    }
+
+    .voucher-header[b-kym9l34g4t] {
+        flex-direction: column;
+        gap: 10px;
+    }
+}

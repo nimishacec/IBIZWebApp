@@ -1,0 +1,393 @@
+    
+@page "/sales-list"
+@using IBIZWebApp.Services
+@inject NavigationManager Navigation
+@inject HttpClient Http
+
+@inject ICompanySelectionService CompanyService
+<PageTitle>Sales List</PageTitle>
+
+
+<div class="sales-order-container">
+    <div class="order-header">
+        <h1>Sales List</h1>
+        <button class="btn btn-primary" @onclick="CreateNewSale">+ Create Sales </button>
+    </div>
+
+    <div class="order-filters">
+        <input type="search" placeholder="Search by Invoice ID or Customer" class="search-input" @bind="searchTerm" @bind:after="OnSearchTermChanged" />
+        <select class="filter-select" @bind="selectedStatus" @bind:after="OnStatusChanged">
+            <option value="">All Status</option>
+            <option>Draft</option>
+            <option>Confirmed</option>
+            <option>Shipped</option>
+            <option>Delivered</option>
+        </select>
+        <button class="btn btn-outline" @onclick="OnSearchAsync">Search</button>
+    </div>
+
+    <div class="table-container">
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-warning">@errorMessage</div>
+        }
+        else if (isLoading)
+        {
+            <div style="text-align:center;padding:40px;font-size:18px;color:#888;">Loading sales...</div>
+        }
+        else
+        {
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Invoice ID</th>
+                        <th>Customer Name</th>
+                        <th>Invoice Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (sales != null && sales.Count > 0)
+                    {
+                        foreach (var sale in sales)
+                        {
+                            <tr>
+                                <td>@(!string.IsNullOrEmpty(sale.InvId) && sale.InvId != "0" ? sale.InvId : (sale.OrderId ?? ""))</td>
+                                <td>@sale.CustomerName</td>
+                                <td>@(sale.InvDate.HasValue ? sale.InvDate.Value.ToString("yyyy-MM-dd") : "")</td>
+                                <td>@(sale.NetAmount.ToString("C", System.Globalization.CultureInfo.CurrentCulture))</td>
+                                <td>
+                                    <span class="badge @(sale.Status == "Confirmed" ? "badge-success" : sale.Status == "Shipped" ? "badge-info" : sale.Status == "Draft" ? "badge-warning" : "")">@sale.Status</span>
+                                </td>
+                                <td>
+                                    <button class="action-btn" @onclick="() => EditSale(sale.Id)">Edit</button>
+                                    <button class="action-btn" @onclick="() => ViewSale(sale.Id)">View</button>
+                                    <button class="action-btn" @onclick="() => ConfirmDelete(sale.Id)">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6">No sales found.</td></tr>
+                    }
+                </tbody>
+            </table>
+            @if (showDeleteConfirm)
+            {
+                <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.3);z-index:9999;display:flex;align-items:center;justify-content:center;">
+                    <div style="background:white;padding:32px 24px;border-radius:8px;min-width:300px;box-shadow:0 2px 8px #0002;">
+                        <h3>Confirm Delete</h3>
+                        <p>Are you sure you want to delete this sale?</p>
+                        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+                            <button class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                            <button class="btn btn-danger" @onclick="DeleteSaleConfirmed">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<style>
+    .sales-order-container {
+        padding: 30px;
+        background-color: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .order-header h1 {
+        margin: 0;
+        color: #333;
+        font-size: 32px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #0066cc;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0052a3;
+    }
+
+    .btn-outline {
+        background-color: transparent;
+        border: 2px solid #0066cc;
+        color: #0066cc;
+    }
+
+    .btn-outline:hover {
+        background-color: #f0f0f0;
+    }
+
+    .order-filters {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+
+    .search-input,
+    .filter-select {
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        background-color: white;
+    }
+
+    .search-input {
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .filter-select {
+        min-width: 150px;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .data-table thead {
+        background-color: #f0f0f0;
+        font-weight: 600;
+    }
+
+    .data-table th {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 2px solid #ddd;
+        color: #333;
+    }
+
+    .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .data-table tr:hover {
+        background-color: #f9f9f9;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .badge-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .badge-warning {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .action-btn {
+        padding: 5px 10px;
+        margin: 0 3px;
+        background-color: #e0e0e0;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: background-color 0.3s;
+    }
+
+    .action-btn:hover {
+        background-color: #d0d0d0;
+    }
+</style>
+
+
+@code {
+        private async Task OnStatusChanged()
+        {
+            await LoadSalesAsync();
+        }
+    // Removed OnParametersSetAsync to avoid duplicate loading; OnInitializedAsync will handle initial load
+    private async Task OnSearchTermChanged()
+    {
+        await LoadSalesAsync();
+    }
+    private string searchTerm = string.Empty;
+    private string selectedStatus = string.Empty;
+    private List<IBIZWebApp.Models.SalesOrder> sales = new();
+    private string errorMessage = string.Empty;
+    private bool showDeleteConfirm = false;
+    private string? saleIdToDelete = null;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CompanyService.LoadSelectedCompanyAsync();
+        await LoadSalesAsync();
+    }
+
+    private async Task OnSearchAsync()
+    {
+        await LoadSalesAsync();
+    }
+
+    private async Task LoadSalesAsync()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        sales = new List<IBIZWebApp.Models.SalesOrder>();
+        if (CompanyService.SelectedCompany == null)
+        {
+            errorMessage = "No company selected. Please log in again.";
+            isLoading = false;
+            return;
+        }
+
+        string url;
+        int page = 1;
+        int pageSize = 10;
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            // Fetch all data (no search param)
+            url = $"{IBIZWebApp.ApiConstants.BaseUrl}/api/Order/search-sales?page={page}&pageSize={pageSize}";
+        }
+        else
+        {
+            url = $"{IBIZWebApp.ApiConstants.BaseUrl}/api/Order/search-sales?search={Uri.EscapeDataString(searchTerm)}&page={page}&pageSize={pageSize}";
+        }
+        var cdkey = CompanyService.SelectedCompany?.LicenceKey ?? string.Empty;
+        var companyCode = CompanyService.SelectedCompany?.CompanyCode ?? string.Empty;
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("CdyKey", cdkey);
+        request.Headers.Add("CompanyCode", companyCode);
+        var response = await Http.SendAsync(request);
+        if (response.IsSuccessStatusCode)
+        {
+            var json = await response.Content.ReadAsStringAsync();
+            var pagedResult = System.Text.Json.JsonSerializer.Deserialize<IBIZWebApp.Models.PagedResponse<IBIZWebApp.Models.SalesOrder>>(json, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var filtered = pagedResult?.Items ?? new List<IBIZWebApp.Models.SalesOrder>();
+            if (!string.IsNullOrEmpty(selectedStatus))
+            {
+                filtered = filtered.Where(o => o.Status == selectedStatus).ToList();
+            }
+            sales = filtered;
+        }
+        else
+        {
+            errorMessage = "Failed to load sales list.";
+        }
+        isLoading = false;
+    }
+
+    private void EditSale(string? saleId)
+    {
+        if (string.IsNullOrEmpty(saleId) || saleId == "0")
+        {
+            Navigation.NavigateTo("/sales");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/sales/{saleId}");
+        }
+    }
+
+    private void ViewSale(string? saleId)
+    {
+        if (!string.IsNullOrEmpty(saleId))
+        {
+            Navigation.NavigateTo($"/sales/{saleId}?view=true");
+        }
+    }
+
+    private void ConfirmDelete(string? saleId)
+    {
+        saleIdToDelete = saleId;
+        showDeleteConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+        saleIdToDelete = null;
+    }
+
+    private async void DeleteSaleConfirmed()
+    {
+        if (string.IsNullOrEmpty(saleIdToDelete))
+        {
+            showDeleteConfirm = false;
+            return;
+        }
+        try
+        {
+            var cdkey = CompanyService.SelectedCompany?.LicenceKey ?? string.Empty;
+            var companyCode = CompanyService.SelectedCompany?.CompanyCode ?? string.Empty;
+            var url = $"{IBIZWebApp.ApiConstants.BaseUrl}/api/Order/{saleIdToDelete}";
+            var request = new HttpRequestMessage(HttpMethod.Delete, url);
+            request.Headers.Add("CdyKey", cdkey);
+            request.Headers.Add("CompanyCode", companyCode);
+            var response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                errorMessage = "Sale deleted successfully.";
+                await LoadSalesAsync();
+            }
+            else
+            {
+                errorMessage = "Failed to delete sale.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting sale: {ex.Message}";
+        }
+        showDeleteConfirm = false;
+        saleIdToDelete = null;
+        StateHasChanged();
+    }
+
+    private void CreateNewSale()
+    {
+        Navigation.NavigateTo("/sales");
+    }
+}

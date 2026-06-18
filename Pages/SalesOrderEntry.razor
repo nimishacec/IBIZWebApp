@@ -1,0 +1,1963 @@
+@page "/sales-order-entry"
+@page "/sales-order-entry/{OrderId?}"
+@layout MainLayout
+<link href="Pages/SalesOrderEntry.razor.css" rel="stylesheet" />
+@using IBIZWebApp.Services
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using System
+@using System.Text.Json.Serialization
+@using System.Data.SqlTypes
+
+
+@inject HttpClient Http
+@inject ICompanySelectionService CompanyService
+@inject IBIZWebApp.Services.ITokenService TokenService
+@inject IJSRuntime JS
+@inject IBIZWebApp.Services.UserSessionService UserSession
+@inject IBIZWebApp.Services.ISalesDropdownService DropdownService
+@inject NavigationManager Navigation
+
+<PageTitle>Sales Order Entry</PageTitle>
+
+<h2 style="margin-top: 20px; margin-bottom: 20px;">
+    <span>
+        @if (IsViewMode)
+        {
+            <span>Sales Order Details</span>
+        }
+        else if (IsEdit)
+        {
+            <span>Edit Sales Order</span>
+        }
+        else
+        {
+            <span>New Sales Order</span>
+        }
+    </span>
+    <a href="/sales-order" class="btn btn-secondary" style="float: right; margin-top: 0; margin-bottom: 0;">&larr; Back to List</a>
+</h2>
+
+
+
+    <EditForm Model="@Order" OnValidSubmit="@SaveOrder"><DataAnnotationsValidator />
+        <!-- Header Section -->
+        <div class="header-grid">
+            <div class="header-item">
+                <label>Invoice No.</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@Order.InvoiceNo" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputText @bind-Value="Order.InvoiceNo" placeholder="Auto" class="header-input" />
+                }
+            </div>
+            <div class="header-item">
+                <label>Reference</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@Order.Reference" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputText @bind-Value="Order.Reference" placeholder="Reference" class="header-input" />
+                }
+            </div>
+            <div class="header-item">
+                <label>Tax Mode</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@Order.TaxMode" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputSelect @bind-Value="Order.TaxMode" class="header-input">
+                        <option>GST</option>
+                        <option>Non-GST</option>
+                    </InputSelect>
+                }
+            </div>
+            <div class="header-item">
+                <label>Sales Man</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@Order.SalesMan" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputSelect @bind-Value="Order.SalesMan" class="header-input">
+                        @foreach (var s in SalesmenList)
+                        {
+                            <option value="@s.Name">@s.Name</option>
+                        }
+                    </InputSelect>
+                }
+            </div>
+            <div class="header-item">
+                <label>Agent</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@Order.AgentID.ToString()" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputSelect @bind-Value="Order.AgentID" class="header-input">
+                        @foreach (var a in AgentsList)
+                        {
+                            <option value="@a.Id">@a.Name</option>
+                        }
+                    </InputSelect>
+                }
+            </div>
+            <div class="header-item">
+                <label>Bill Type</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@Order.BillType" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputSelect @bind-Value="Order.BillType" class="header-input">
+                        <option value="Regular Sales">Regular Sales</option>
+                        <option value="Cash Sale">Cash Sale</option>
+                        <option value="Credit Sale">Credit Sale</option>
+                    </InputSelect>
+                }
+            </div>
+            <div class="header-item">
+                <label>Mode of Payment</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@Order.ModeOfPayment" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputSelect @bind-Value="Order.ModeOfPayment" class="header-input">
+                        <option value="Cash">Cash</option>
+                        <option value="Credit">Credit</option>
+                        <option value="Cheque">Cheque</option>
+                        <option value="Online">Online</option>
+                    </InputSelect>
+                }
+            </div>
+            <div class="header-item">
+                <label>Cost Centre</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@Order.CostCentre" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputSelect @bind-Value="Order.CostCentre" class="header-input">
+                        @foreach (var c in CostCentresList)
+                        {
+                            <option value="@c.Name">@c.Name</option>
+                        }
+                    </InputSelect>
+                }
+            </div>
+            <div class="header-item">
+                <label>Price List</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@Order.PriceList" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputSelect @bind-Value="Order.PriceListID" class="header-input">
+                        @foreach (var p in PriceListsList)
+                        {
+                            <option value="@p.Id">@p.Name</option>
+                        }
+                    </InputSelect>
+                }
+            </div>
+            <div class="header-item">
+                <label>Date</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@Order.Date.ToString("yyyy-MM-dd")" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputDate @bind-Value="Order.Date" class="header-input" />
+                }
+            </div>
+            <div class="header-item">
+                <label>Requested Date</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@Order.RequestedDate.ToShortDateString()" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputDate @bind-Value="Order.RequestedDate" class="header-input" />
+                }
+            </div>
+            <div class="header-item">
+                <label>Time</label>
+                @if (IsViewMode)
+                {
+                    <InputText Value="@OrderTimeString" class="header-input" readonly disabled />
+                }
+                else
+                {
+                    <InputText @bind-Value="OrderTimeString" class="header-input" />
+                }
+            </div>
+        </div>
+
+    <!-- Main Content: Two Columns -->
+    <div class="main-content">
+        <div class="left-section">
+            <!-- Item Selection (removed grid, kept search panel for context if needed) -->
+            @if (!IsViewMode)
+            {
+                <div class="item-search-panel">
+                    <div class="search-row">
+                        <button type="button" class="btn btn-open-modal" @onclick="OpenItemModal">
+                            <span role="img" aria-label="search">🔍</span> Search Items
+                        </button>
+                        <div class="barcode-search">
+                            <label>Barcode Search</label>
+                            <InputText @bind-Value="Barcode" placeholder="Scan barcode..." class="search-input" />
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Order Items Grid -->
+            <div class="items-table-section">
+                <h3>Order Items</h3>
+                <div class="table-responsive">
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>SINo</th>
+                                <th>Item Name</th>
+                                <th>Batch</th>
+                                <th>Qty</th>
+                                <th>Rate</th>
+                                <th>Amount</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Order.Items.Count; i++)
+                            {
+                                var item = Order.Items[i];
+                                <tr>
+                                    <td>@(i + 1)</td>
+                                    <td>@item.ItemName</td>
+                                    <td>
+                                        @if (IsViewMode)
+                                        {
+                                            <input type="text" value="@item.Batch" class="input-sm" readonly disabled tabindex="-1" />
+                                        }
+                                        else
+                                        {
+                                            <input type="text" @bind="item.Batch" class="input-sm" />
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (IsViewMode)
+                                        {
+                                            <input type="number" value="@item.Qty" class="input-sm" readonly disabled tabindex="-1" />
+                                        }
+                                        else
+                                        {
+                                            <input type="number" @bind="item.Qty" class="input-sm" />
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (IsViewMode)
+                                        {
+                                            <input type="number" value="@item.Rate" class="input-sm" readonly disabled tabindex="-1" />
+                                        }
+                                        else
+                                        {
+                                            <input type="number" step="0.01" @bind="item.Rate" class="input-sm" />
+                                        }
+                                    </td>
+                                    <td>@(item.Qty * item.Rate)</td>
+                                    <td>
+                                        @if (!IsViewMode)
+                                        {
+                                            <button class="btn-remove" @onclick="() => RemoveItem(i)">🗑</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="right-section">
+            <div class="customer-panel">
+                <h3>Customer Details</h3>
+                <div class="form-group">
+                    <label>Mobile Number</label>
+                    @if (!IsViewMode)
+                    {
+                        <button type="button" class="btn btn-open-modal" @onclick="OpenCustomerModal">
+                            <span role="img" aria-label="customer">👤</span> Select Customer
+                        </button>
+                    }
+                    else
+                    {
+                        <InputText Value="@SelectedCustomer.Mobile" class="form-input" readonly disabled tabindex="-1" />
+                    }
+                </div>
+                <div class="form-group">
+                    <label>Customer Name</label>
+                    @if (IsViewMode)
+                    {
+                        <InputText Value="@SelectedCustomer.Name" class="form-input" readonly disabled tabindex="-1" />
+                    }
+                    else
+                    {
+                        <InputText @bind-Value="SelectedCustomer.Name" class="form-input" readonly />
+                    }
+                </div>
+                <div class="form-group">
+                    <label>Customer Balance</label>
+                    <input value="@SelectedCustomer.Balance.ToString()" class="form-input" readonly disabled tabindex="-1" />
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    @if (IsViewMode)
+                    {
+                        <InputText Value="@SelectedCustomer.Address" class="form-input" readonly disabled tabindex="-1" />
+                    }
+                    else
+                    {
+                        <InputText @bind-Value="SelectedCustomer.Address" class="form-input" readonly />
+                    }
+                </div>
+                <div class="form-group">
+                    <label>GSTIN</label>
+                    @if (IsViewMode)
+                    {
+                        <InputText Value="@SelectedCustomer.GSTIN" class="form-input" readonly disabled tabindex="-1" />
+                    }
+                    else
+                    {
+                        <InputText @bind-Value="SelectedCustomer.GSTIN" class="form-input" readonly />
+                    }
+                </div>
+            </div>
+            <div class="summary-panel">
+                <h3>Order Summary</h3>
+                <div class="summary-item">
+                    <span>Gross Amount</span>
+                    <span>@Order.Items.Sum(x => x.Qty * x.Rate)</span>
+                </div>
+                <div class="summary-item">
+                    <span>Tax Amount</span>
+                    <span>@Order.TaxAmount</span>
+                </div>
+                <div class="summary-item">
+                    <span>Discount</span>
+                    <span>@Order.Discount</span>
+                </div>
+                <div class="summary-item total">
+                    <span>Total Amount</span>
+                    <span>@(Order.Items.Sum(x => x.Qty * x.Rate) + Order.TaxAmount - Order.Discount)</span>
+                </div>
+            </div>
+            @if (!IsViewMode)
+            {
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-primary">Save Order</button>
+                    <button type="button" class="btn btn-secondary" @onclick="ClearOrder">Clear</button>
+                    <button type="button" class="btn btn-outline" @onclick="PrintOrder">Print</button>
+                    <button type="button" class="btn btn-danger" @onclick="CancelOrder">Cancel</button>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(SaveMessage))
+            {
+                <div class="alert @(SaveSuccess ? "alert-success" : "alert-danger")" style="margin-top:10px;">
+                    @SaveMessage
+                </div>
+            }
+        </div>
+    </div>
+</EditForm>
+
+<!-- Item Selection Modal -->
+@if (ShowItemModal)
+{
+    <div class="modal-overlay" @onclick="() => ShowItemModal = false">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>Select Item</h3>
+                <button class="close-btn" @onclick="() => ShowItemModal = false">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-search">
+                    <input type="text" @bind="ItemSearchQuery" @oninput="SearchItems" placeholder="Search item name or code..." class="search-input" />
+                </div>
+                <div class="modal-items-list">
+                    @if (FilteredItems.Count == 0)
+                    {
+                        <div class="no-items">No items found</div>
+                    }
+                    else
+                    {
+                        @foreach (var item in FilteredItems)
+                        {
+                            <div class="modal-item" @onclick="() => SelectItemAndClose(item)">
+                                <div class="modal-item-name">@item.Name</div>
+                                <div class="modal-item-details">
+                                    <span>Code: @item.ItemCode</span>
+                                    <span>Rate: ₹@item.Rate</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    <!-- Qty Numeric Keypad Section -->
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Customer Selection Modal -->
+@if (ShowCustomerModal)
+{
+    <div class="modal-overlay" @onclick="() => ShowCustomerModal = false">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>Select Customer</h3>
+                <button class="close-btn" @onclick="() => ShowCustomerModal = false">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-search">
+                    <input type="text" @bind="CustomerSearchQuery" @oninput="SearchCustomers" placeholder="Search by mobile or name..." class="search-input" />
+                </div>
+                <div class="modal-items-list">
+                    @if (IsLoadingCustomers)
+                    {
+                        <div class="no-items">Loading customers...</div>
+                    }
+                    else if (FilteredCustomers.Count == 0)
+                    {
+                        <div class="no-items">No customers found</div>
+                    }
+                    else
+                    {
+                        @foreach (var customer in FilteredCustomers)
+                        {
+                            <div class="modal-item" @onclick="() => SelectCustomerAndClose(customer)">
+                                <div class="modal-item-name">@customer.Name</div>
+                                <div class="modal-item-details">
+                                    <span>Mobile: @customer.Mobile</span>
+                                    <span>Address: @customer.Address</span>
+                                    <span>GSTIN: @customer.GSTIN</span>
+                                    <span>Balance: @customer.Balance</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+<style>
+    .order-entry-container {
+        padding: 0;
+        background-color: #fff;
+        min-height: 100vh;
+        min-width: 100vw;
+        width: 100vw;
+        height: 100vh;
+        box-sizing: border-box;
+    }
+
+    /* Header Styles */
+    .order-header {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-grid,
+    .header-grid-second {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .header-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .header-item label {
+        font-weight: 600;
+        font-size: 12px;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .header-input,
+    .form-input {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    /* Main Content */
+    .main-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 15px;
+        margin-bottom: 0;
+        height: 100vh;
+        width: 100vw;
+        max-width: 100vw;
+        box-sizing: border-box;
+    }
+
+    .left-section,
+    .right-section {
+        background-color: white;
+        border-radius: 0;
+        box-shadow: none;
+        height: 100vh;
+        margin: 0;
+        padding: 24px 16px 16px 16px;
+        box-sizing: border-box;
+    }
+
+    .left-section {
+        width: 100%;
+    }
+
+    .right-section {
+        width: 100%;
+        overflow-y: unset;
+        max-height: unset;
+    }
+
+    .left-section h3,
+    .right-section h3,
+    .right-section h4 {
+        margin: 0 0 15px 0;
+        color: #333;
+        font-size: 16px;
+    }
+
+    /* Item Search Panel */
+    .item-search-panel {
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .search-row {
+        display: flex;
+        gap: 12px;
+    }
+
+    .search-group {
+        flex: 1;
+        margin-bottom: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .search-group label {
+        display: block;
+        font-weight: 600;
+        font-size: 12px;
+        margin-bottom: 5px;
+        color: #666;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .btn-open-modal {
+        width: 100%;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 22px;
+    }
+
+    .btn-open-modal:hover {
+        background-color: #0056b3;
+    }
+
+    .selected-value {
+        padding: 8px;
+        background-color: #f5f5f5;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-top: 5px;
+        font-size: 13px;
+        color: #333;
+    }
+
+    /* Items List */
+    .items-list {
+        display: none;
+    }
+
+    .item-card {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+        background-color: #f9f9f9;
+    }
+
+    .item-card:hover {
+        background-color: #e3f2fd;
+        border-color: #0066cc;
+    }
+
+    .item-name {
+        font-weight: 600;
+        font-size: 12px;
+        color: #333;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .item-code {
+        font-size: 11px;
+        color: #999;
+        margin: 2px 0;
+    }
+
+    .item-rate {
+        font-size: 11px;
+        color: #0066cc;
+        font-weight: 600;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: #333;
+        font-size: 18px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 28px;
+        cursor: pointer;
+        color: #999;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .close-btn:hover {
+        color: #333;
+    }
+
+    .modal-body {
+        padding: 15px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .modal-search {
+        margin-bottom: 15px;
+    }
+
+    .modal-items-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .modal-item {
+        padding: 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+        background-color: #f9f9f9;
+    }
+
+    .modal-item:hover {
+        background-color: #e3f2fd;
+        border-color: #0066cc;
+        transform: translateX(5px);
+    }
+
+    .modal-item-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .modal-item-details {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #999;
+    }
+
+    .no-items {
+        text-align: center;
+        padding: 30px;
+        color: #999;
+        font-size: 14px;
+    }
+
+    /* Barcode Search */
+    .barcode-search {
+        flex: 1;
+        margin-top: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .barcode-search label {
+        display: block;
+        font-weight: 600;
+        font-size: 12px;
+        margin-bottom: 5px;
+        color: #666;
+    }
+
+    /* Items Table */
+    .items-table-section {
+        margin-top: 20px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        width: 100%;
+    }
+
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .items-table th {
+        background-color: #f0f0f0;
+        padding: 8px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid #ddd;
+    }
+
+    .items-table td {
+        padding: 8px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .input-sm {
+        width: 100%;
+        padding: 4px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        font-size: 12px;
+    }
+
+    .btn-remove {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 0;
+    }
+
+    /* Customer Panel */
+    .customer-panel {
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .form-group {
+        margin-bottom: 12px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        font-size: 12px;
+        margin-bottom: 5px;
+        color: #666;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+    }
+
+    .form-group textarea {
+        resize: vertical;
+    }
+
+    .info-box {
+        background-color: #f5f5f5;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 12px;
+    }
+
+    .info-row,
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+
+    .info-row:last-child,
+    .info-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .value {
+        font-weight: 600;
+        color: #0066cc;
+    }
+
+    /* Numeric Pad */
+    .numeric-pad {
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .numeric-pad h4 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+    }
+
+    .keypad-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+        margin-bottom: 10px;
+    }
+
+    .key {
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .key:hover {
+        background-color: #e0e0e0;
+    }
+
+    .key.red {
+        background-color: #ffebee;
+        color: #c62828;
+    }
+
+    .key.enter {
+        background-color: #c8e6c9;
+        color: #2e7d32;
+        grid-column: span 3;
+    }
+
+    .qty-display {
+        text-align: center;
+        padding: 10px;
+        background-color: #f5f5f5;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    /* Summary Panel */
+    .summary-panel {
+        background-color: #f5f5f5;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+
+    .summary-panel h3 {
+        margin-top: 0;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        padding: 8px 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .summary-item.total {
+        font-weight: 700;
+        color: #0066cc;
+        font-size: 14px;
+        border-bottom: none;
+        padding-top: 8px;
+        padding-bottom: 0;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .btn {
+        padding: 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background-color: #0066cc;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0052a3;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+
+    .btn-outline {
+        background-color: transparent;
+        border: 2px solid #0066cc;
+        color: #0066cc;
+    }
+
+    .btn-outline:hover {
+        background-color: #f0f0f0;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 1024px) {
+        .main-content {
+            grid-template-columns: 1fr;
+        }
+
+        .right-section {
+            max-height: none;
+        }
+
+        .keypad-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .key.enter {
+            grid-column: span 4;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .order-entry-container {
+            padding: 10px;
+        }
+
+        .order-header {
+            padding: 10px;
+        }
+
+        .header-grid,
+        .header-grid-second {
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .left-section,
+        .right-section {
+            padding: 10px;
+        }
+
+        .items-table {
+            font-size: 11px;
+        }
+
+        .items-table th,
+        .items-table td {
+            padding: 6px 4px;
+        }
+
+        .keypad-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .key.enter {
+            grid-column: span 3;
+        }
+
+        .action-buttons {
+            flex-direction: row;
+        }
+
+        .action-buttons .btn {
+            flex: 1;
+            padding: 8px;
+        }
+
+        .items-list {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+
+@code {
+    // Barcode property for binding
+    private string Barcode { get; set; } = string.Empty;
+
+    // SelectedCustomer property for binding
+    private Customer SelectedCustomer { get; set; } = new Customer();
+
+
+    private async Task CallLedgerBillStatusApi(double invId)
+    {
+        var reqList = new List<IBIZWebApp.Models.LedgerBillStatusRequest>();
+        var req = new IBIZWebApp.Models.LedgerBillStatusRequest
+        {
+            InvId = (int)(Order.InvId != 0 ? Order.InvId : invId),
+            InvNo = Order.InvoiceNo,
+            InvDate = DateTime.Now.ToString("yyyy-MM-dd"),
+            CreditDays = SelectedCustomer != null && SelectedCustomer.Balance > 0 ? (int)SelectedCustomer.Balance : 0,
+            BillAmt = (Order.Items.Sum(x => x.Qty * x.Rate) + Order.TaxAmount - Order.Discount),
+            LedgerId = Order.LedgerID != null ? (int)Order.LedgerID : 0,
+            MOP = Order.ModeOfPayment,
+            VcType = "Sales Order",
+            CurrentAmt = (Order.Items.Sum(x => x.Qty * x.Rate) + Order.TaxAmount - Order.Discount),
+            SaAmount =0,// (Order.Items.Sum(x => x.Qty * x.Rate) + Order.TaxAmount - Order.Discount),
+            VchTypeID = 3,
+            SettleStatus = 0
+        };
+        reqList.Add(req);
+        var url = $"{ApiConstants.BaseUrl}/api/Order/LedgerBillStatus";
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        var cdkey = CompanyService.SelectedCompany?.LicenceKey ?? string.Empty;
+        var companyCode = CompanyService.SelectedCompany?.CompanyCode ?? string.Empty;
+        request.Headers.Add("CdyKey", cdkey);
+        request.Headers.Add("CompanyCode", companyCode);
+        var token = await TokenService.GetTokenAsync();
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+        var bodyJson = System.Text.Json.JsonSerializer.Serialize(reqList);
+        request.Content = new StringContent(bodyJson, System.Text.Encoding.UTF8, "application/json");
+        var response = await Http.SendAsync(request);
+        // Optionally handle response
+    }
+
+    // For binding TimeOnly to string for EditForm
+    private string OrderTimeString
+    {
+        get => Order.OrderTime.ToString("HH:mm");
+        set
+        {
+            if (TimeOnly.TryParse(value, out var t))
+                Order.OrderTime = t;
+        }
+    }
+
+    // Ensure SaveOrder is async Task for EditForm
+    public class OrderItem
+    {
+        public string ItemName { get; set; } = "";
+        public string ItemCode { get; set; } = "";
+        public string Batch { get; set; } = "";
+        public decimal Qty { get; set; } = 0;
+        public decimal Rate { get; set; } = 0;
+    }
+
+    public class SalesItem
+    {
+        [JsonPropertyName("ItemName")]
+        public string Name { get; set; } = "";
+        [JsonPropertyName("ItemCode")]
+        public string ItemCode { get; set; } = "";
+        [JsonPropertyName("Batch")]
+        public string Batch { get; set; } = "";
+          [JsonPropertyName("MRP")]
+        public decimal Rate { get; set; }
+    }
+
+    public class Customer
+    {
+        public string Mobile { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Address { get; set; } = "";
+        public string GSTIN { get; set; } = "";
+        public decimal Balance { get; set; } = 0;
+        public decimal? LID { get; set; }
+    }
+
+    public class SalesOrder
+    {
+        public string? OrderId { get; set; } = null;
+        public double InvId { get; set; } = 0;
+        public string InvoiceNo { get; set; } = "";
+        public string Reference { get; set; } = "";
+        public string TaxMode { get; set; } = "GST";
+        public string SalesMan { get; set; } = "DEFAULT EMPLOYEE";
+        public int AgentID { get; set; } = 0;
+        public decimal? LedgerID { get; set; }
+        public string ModeOfPayment { get; set; } = "Cash";
+        public DateTime Date { get; set; } = DateTime.Now;
+        public DateTime RequestedDate { get; set; } = DateTime.Now;
+        public TimeOnly OrderTime { get; set; } = TimeOnly.FromDateTime(DateTime.Now);
+        public string BillType { get; set; } = "Regular Sales";
+        public string CostCentre { get; set; } = "<MAIN>";
+        public int PriceListID { get; set; } = 0;
+        public string PriceList { get; set; } = "";
+        public string MobileNumber { get; set; } = "";
+        public string CustomerName { get; set; } = "";
+        public string Address { get; set; } = "";
+        public string GSTIN { get; set; } = "";
+        public decimal CustomerBalance { get; set; } = 0;
+        public decimal TaxAmount { get; set; } = 0;
+        public decimal BillAmt { get; set; } = 0;
+        public decimal Discount { get; set; } = 0;
+        public double VchTypeID { get; set; }
+        public double CCID { get; set; }
+        public double CurrencyID { get; set; }
+        public string? PartyAddress { get; set; }
+        public string? Agent { get; set; }
+        public int UserID { get; set; }
+        // Removed duplicate AgentID property to avoid JSON property name collision
+        public List<OrderItem> Items { get; set; } = new();
+    }
+
+    [Parameter]
+    public string? OrderId { get; set; }
+    private SalesOrder Order = new();
+    private bool IsEdit => !string.IsNullOrEmpty(OrderId) && OrderId != "0";
+    [Parameter]
+    public bool IsViewMode { get; set; } = false; // Set this to true in view-only scenarios
+    private string SaveMessage = string.Empty;
+    private bool SaveSuccess = false;
+    private List<SalesItem> AllItems = new();
+    private List<SalesItem> FilteredItems = new();
+    private List<Customer> AllCustomers = new();
+    private List<Customer> FilteredCustomers = new();
+    private string ItemSearchQuery = "";
+    private string CustomerSearchQuery = "";
+    private string BarcodeInput = "";
+
+    private bool ShowItemModal = false;
+    private bool ShowCustomerModal = false;
+    private bool IsLoadingDropdowns = true;
+    private bool IsLoadingCustomers = false;
+
+    // API-driven dropdown lists
+    private List<IBIZWebApp.Models.DropdownItem> SalesmenList = new();
+    private List<IBIZWebApp.Models.DropdownItem> CostCentresList = new();
+    private List<IBIZWebApp.Models.DropdownItem> AgentsList = new();
+    private List<IBIZWebApp.Models.DropdownItem> PriceListsList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        InitializeItems();
+        await LoadDropdownsAsync();
+
+        // Always load order data after dropdowns are loaded
+        if (!string.IsNullOrEmpty(OrderId) && OrderId != "0")
+        {
+            // If OrderId is present, determine if view or edit mode
+            if (IsViewMode || !IsEdit)
+            {
+                IsViewMode = true;
+            }
+            var url = $"{ApiConstants.BaseUrl}/api/Order/{OrderId}";
+            var cdkey = CompanyService.SelectedCompany?.LicenceKey ?? string.Empty;
+            var companyCode = CompanyService.SelectedCompany?.CompanyCode ?? string.Empty;
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Add("CdyKey", cdkey);
+            request.Headers.Add("CompanyCode", companyCode);
+            var response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var order = System.Text.Json.JsonSerializer.Deserialize<SalesOrder>(json, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (order != null)
+                {
+                    Order = order;
+                    // Ensure OrderId is set from parameter if missing
+                    if (string.IsNullOrEmpty(Order.OrderId))
+                    {
+                        Order.OrderId = OrderId;
+                    }
+                    // Try to set InvId from the loaded order if present in JSON
+                    if (Order.InvId == 0 && double.TryParse(Order.OrderId, out var parsedInvId))
+                    {
+                        Order.InvId = parsedInvId;
+                    }
+                    // Ensure ItemName is set for each item (in case API returns Name instead)
+                    if (Order.Items != null)
+                    {
+                        foreach (var item in Order.Items)
+                        {
+                            if (!string.IsNullOrEmpty(item.ItemName))
+                                item.ItemName = item.ItemName;
+                        }
+                    }
+                    // Set SelectedCustomer fields from loaded Order
+                    SelectedCustomer = new Customer
+                    {
+                        Name = Order.CustomerName,
+                        Mobile = Order.MobileNumber,
+                        Address = Order.Address,
+                        GSTIN = Order.GSTIN,
+                        Balance = Order.CustomerBalance
+                    };
+
+                    // Set AgentID and PriceListID from loaded Agent/PriceList names
+                    if (AgentsList?.Count > 0 && !string.IsNullOrWhiteSpace(Order.Agent))
+                        Order.AgentID = AgentsList.FirstOrDefault(a => a.Name == Order.Agent)?.Id ?? 0;
+                    if (PriceListsList?.Count > 0 && !string.IsNullOrWhiteSpace(Order.PriceList))
+                        Order.PriceListID = PriceListsList.FirstOrDefault(p => p.Name == Order.PriceList)?.Id ?? 0;
+
+                    // Ensure dropdowns display correct values from API response
+                    if (SalesmenList?.Count > 0 && !string.IsNullOrWhiteSpace(Order.SalesMan))
+                        Order.SalesMan = SalesmenList.FirstOrDefault(s => s.Name == Order.SalesMan)?.Name ?? SalesmenList[0].Name;
+                    if (CostCentresList?.Count > 0 && !string.IsNullOrWhiteSpace(Order.CostCentre))
+                        Order.CostCentre = CostCentresList.FirstOrDefault(c => c.Name == Order.CostCentre)?.Name ?? CostCentresList[0].Name;
+                    if (!string.IsNullOrWhiteSpace(Order.TaxMode) && (Order.TaxMode == "GST" || Order.TaxMode == "Non-GST"))
+                        Order.TaxMode = Order.TaxMode;
+                    else
+                        Order.TaxMode = "GST";
+                }
+            }
+        }
+    }
+
+    private async Task LoadDropdownsAsync()
+    {
+        IsLoadingDropdowns = true;
+        try
+        {
+            var salesmenTask = DropdownService.GetSalesmenAsync();
+            var costCentresTask = DropdownService.GetCostCentresAsync();
+            var agentsTask = DropdownService.GetAgentsAsync();
+            var priceListsTask = DropdownService.GetPriceListsAsync();
+
+            await Task.WhenAll(salesmenTask, costCentresTask, agentsTask, priceListsTask);
+
+            SalesmenList = salesmenTask.Result;
+            CostCentresList = costCentresTask.Result;
+            AgentsList = agentsTask.Result;
+            PriceListsList = priceListsTask.Result;
+
+            await JS.InvokeVoidAsync("console.log", $"Salesmen: {SalesmenList.Count}, CostCentres: {CostCentresList.Count}, Agents: {AgentsList.Count}, PriceLists: {PriceListsList.Count}");
+
+            // Only set defaults if creating a new order (not edit or view mode)
+            if (string.IsNullOrEmpty(OrderId) || OrderId == "0")
+            {
+                if (SalesmenList.Count > 0) Order.SalesMan = SalesmenList[0].Name;
+                if (CostCentresList.Count > 0) Order.CostCentre = CostCentresList[0].Name;
+                if (AgentsList.Count > 0) Order.Agent = AgentsList[0].Name;
+                if (PriceListsList.Count > 0) Order.PriceList = PriceListsList[0].Name;
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", "LoadDropdownsAsync error:", ex.Message);
+        }
+        finally
+        {
+            IsLoadingDropdowns = false;
+        }
+    }
+
+    private void InitializeItems()
+    {
+        @* AllItems = new List<SalesItem>
+        {
+            new SalesItem { Name = "HARPIC PWR 500ML", Code = "456789", Rate = 200 },
+            new SalesItem { Name = "Test Item", Code = "test", Rate = 100 },
+            new SalesItem { Name = "Opening Test", Code = "opeingtest", Rate = 300 },
+            new SalesItem { Name = "Bulb LED 18W", Code = "LED18", Rate = 250 },
+            new SalesItem { Name = "Bulb LED 24W", Code = "LED24", Rate = 350 },
+            new SalesItem { Name = "Soap Bar", Code = "SOAP001", Rate = 50 },
+            new SalesItem { Name = "Detergent Powder", Code = "DETP500", Rate = 450 }
+        };
+        FilteredItems = AllItems; *@
+    }
+
+    private void InitializeCustomers()
+    {
+        AllCustomers = new List<Customer>();
+        FilteredCustomers = AllCustomers;
+    }
+
+    private async Task OpenItemModal()
+    {
+        ShowItemModal = true;
+        ItemSearchQuery = "";
+        try
+        {
+            var cdkey = CompanyService.SelectedCompany?.LicenceKey ?? string.Empty;
+            var companyCode = CompanyService.SelectedCompany?.CompanyCode ?? string.Empty;
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiConstants.BaseUrl}/api/Order/items");
+            request.Headers.Add("CdyKey", cdkey);
+            request.Headers.Add("CompanyCode", companyCode);
+
+            var response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var items = System.Text.Json.JsonSerializer.Deserialize<List<SalesItem>>(json, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                AllItems = items ?? new List<SalesItem>();
+                FilteredItems = AllItems;
+            }
+            else
+            {
+                AllItems = new List<SalesItem>();
+                FilteredItems = AllItems;
+            }
+        }
+        catch
+        {
+            AllItems = new List<SalesItem>();
+            FilteredItems = AllItems;
+        }
+    }
+
+    private void SelectItemAndClose(SalesItem item)
+    {
+        var orderItem = new OrderItem
+        {
+            ItemName = item.Name,
+            ItemCode = item.ItemCode,
+            Batch = item.Batch,
+            Rate = item.Rate,
+            Qty = 1
+        };
+        Order.Items.Add(orderItem);
+        ShowItemModal = false;
+        ItemSearchQuery = "";
+    }
+
+    private async Task OpenCustomerModal()
+    {
+        ShowCustomerModal = true;
+        CustomerSearchQuery = "";
+        IsLoadingCustomers = true;
+        StateHasChanged();
+        try
+        {
+            var customers = await DropdownService.GetCustomersAsync();
+            await JS.InvokeVoidAsync("console.log", $"Customers loaded: {customers.Count}");
+            if (customers.Count > 0)
+            {
+                await JS.InvokeVoidAsync("console.log", $"First customer: Id={customers[0].Id}, Name={customers[0].Name}");
+            }
+            AllCustomers = customers.Select(c => new Customer
+            {
+                Name = c.Name,
+                Mobile = c.Mobile,
+                Address = c.Address,
+                GSTIN = c.GSTIN,
+                Balance = c.Balance,
+                LID = c.LID
+            }).ToList();
+            FilteredCustomers = AllCustomers;
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", "OpenCustomerModal error:", ex.Message);
+            AllCustomers = new List<Customer>();
+            FilteredCustomers = AllCustomers;
+        }
+        finally
+        {
+            IsLoadingCustomers = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SelectCustomerAndClose(Customer customer)
+    {
+        Order.MobileNumber = customer.Mobile;
+        Order.CustomerName = customer.Name;
+        Order.Address = customer.Address;
+        Order.GSTIN = customer.GSTIN;
+        Order.CustomerBalance = customer.Balance;
+        Order.LedgerID = customer.LID;
+        SelectedCustomer = new Customer
+        {
+            Name = customer.Name,
+            Mobile = customer.Mobile,
+            Address = customer.Address,
+            GSTIN = customer.GSTIN,
+            Balance = customer.Balance,
+            LID = customer.LID
+        };
+        ShowCustomerModal = false;
+        CustomerSearchQuery = "";
+    }
+
+    private void SearchItems(ChangeEventArgs e)
+    {
+        ItemSearchQuery = e.Value?.ToString() ?? "";
+        if (string.IsNullOrEmpty(ItemSearchQuery))
+        {
+            FilteredItems = AllItems;
+        }
+        else
+        {
+            FilteredItems = AllItems.Where(x => 
+                x.Name.Contains(ItemSearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                x.ItemCode.Contains(ItemSearchQuery, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+        }
+    }
+
+    private void SearchCustomers(ChangeEventArgs e)
+    {
+        CustomerSearchQuery = e.Value?.ToString() ?? "";
+        if (string.IsNullOrEmpty(CustomerSearchQuery))
+        {
+            FilteredCustomers = AllCustomers;
+        }
+        else
+        {
+            FilteredCustomers = AllCustomers.Where(x =>
+                (x.Mobile != null && x.Mobile.Contains(CustomerSearchQuery, StringComparison.OrdinalIgnoreCase)) ||
+                (x.Name != null && x.Name.Contains(CustomerSearchQuery, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
+    }
+
+    private void SelectItem(SalesItem item)
+    {
+        var orderItem = new OrderItem
+        {
+            ItemName = item.Name,
+            ItemCode = item.ItemCode,
+            Batch = item.Batch,
+            Rate = item.Rate,
+            Qty = 1
+        };
+        Order.Items.Add(orderItem);
+        ItemSearchQuery = "";
+        FilteredItems = AllItems;
+    }
+
+    private void CalculateAmount(OrderItem item)
+    {
+        // Amount calculated in display
+    }
+
+    private void RemoveItem(int index)
+    {
+        Order.Items.RemoveAt(index);
+    }
+
+    private void HandleBarcodeInput(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            SearchItems(new ChangeEventArgs { Value = BarcodeInput });
+            BarcodeInput = "";
+        }
+    }
+
+    private void QtyInput_OnInput(ChangeEventArgs e)
+    {
+        // Handled by the input binding
+    }
+
+
+
+    private async Task SaveOrder()
+    {
+        if (Order.Items.Count == 0)
+        {
+            Console.WriteLine("No items in order");
+            return;
+        }
+        await SaveOrderAsync();
+    }
+    // Mapping dictionaries for dropdowns (built from API data)
+    private Dictionary<string, int> CostCentreMap => CostCentresList.ToDictionary(x => x.Name, x => x.Id);
+    private Dictionary<string, int> SalesManMap => SalesmenList.ToDictionary(x => x.Name, x => x.Id);
+    private Dictionary<string, int> AgentMap => AgentsList.ToDictionary(x => x.Name, x => x.Id);
+    private Dictionary<string, int> PriceListMap => PriceListsList.ToDictionary(x => x.Name, x => x.Id);
+    private readonly Dictionary<string, int> BillTypeMap = new()
+    {
+        { "Regular Sales", 1 },
+        { "Cash Sale", 2 },
+        { "Credit Sale", 3 }
+    };
+    private readonly Dictionary<string, int> ModeOfPaymentMap = new()
+    {
+        { "Cash", 1 },
+        { "Credit", 2 },
+        { "Cheque", 3 },
+        { "Online", 4 }
+    };
+ private static int _lastInvId = 0;
+                    private int GetNextInvId()
+                    {
+                        _lastInvId++;
+                        return _lastInvId;
+                    }
+    // Invoice ID for new orders
+    private double newInvId = 0;
+
+    private async Task FetchNewInvIdAsync(string SALES, string Sales)
+    {
+        try
+        {
+            // Get company details from selected company
+            var cdkey = CompanyService.SelectedCompany?.LicenceKey ?? string.Empty;
+            var companyCode = CompanyService.SelectedCompany?.CompanyCode ?? string.Empty;
+            var url = $"http://localhost:5090/api/Order/last-invid?vchrType={Uri.EscapeDataString(SALES)}&nodeName={Uri.EscapeDataString(Sales)}";
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Add("CdyKey", cdkey);
+            request.Headers.Add("CompanyCode", companyCode);
+
+            // Add Bearer token to Authorization header
+            var token = await TokenService.GetTokenAsync();
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var lastInvIdResponse = await Http.SendAsync(request);
+            if (lastInvIdResponse.IsSuccessStatusCode)
+            {
+                var lastInvIdString = await lastInvIdResponse.Content.ReadAsStringAsync();
+                if (double.TryParse(lastInvIdString, out var lastInvId))
+                {
+                    newInvId = lastInvId + 1;
+                }
+                else
+                {
+                    newInvId = 1;
+                }
+            }
+            else
+            {
+                newInvId = 1;
+            }
+        }
+        catch
+        {
+            newInvId = 1;
+        }
+    }
+    private async Task SaveOrderAsync()
+                // Ensure Agent and PriceList names are set from selected IDs before mapping to IDs for DB
+                 {
+
+        try
+        {
+            Order.AgentID = AgentsList.FirstOrDefault(a => a.Id == Order.AgentID)?.Id ?? 0;
+            Order.PriceListID = PriceListsList.FirstOrDefault(p => p.Id == Order.PriceListID)?.Id ?? 0;
+
+            // Always map latest selected customer to order before validation/saving
+            Order.CustomerName = SelectedCustomer.Name;
+            Order.MobileNumber = SelectedCustomer.Mobile;
+            Order.Address = SelectedCustomer.Address;
+            Order.GSTIN = SelectedCustomer.GSTIN;
+            Order.CustomerBalance = SelectedCustomer.Balance;
+            Order.LedgerID = SelectedCustomer.LID;
+
+            // Validate required fields before sending
+            if (Order.Items == null || Order.Items.Count == 0)
+            {
+                SaveSuccess = false;
+                SaveMessage = "Order must have at least one item.";
+                await JS.InvokeVoidAsync("alert", SaveMessage);
+                return;
+            }
+
+
+      
+           
+
+            string order_id = Order.OrderId ?? string.Empty;
+            Order.OrderId = OrderId;
+            var isEdit = IsEdit && !string.IsNullOrEmpty(Order.OrderId) && Order.OrderId != "0";
+
+            // Fetch last InvId from API if not edit
+            if (!isEdit)
+            {
+                await FetchNewInvIdAsync("SALES", "Sales");
+            }
+
+            var url = $"{ApiConstants.BaseUrl}/App/UploadDataRequest";
+            var method = HttpMethod.Post;
+            var request = new HttpRequestMessage(method, url);
+
+            // Get company details from selected company
+            var cdkey = CompanyService.SelectedCompany?.LicenceKey ?? string.Empty;
+            var companyCode = CompanyService.SelectedCompany?.CompanyCode ?? string.Empty;
+
+            // Set custom headers
+            request.Headers.Add("CdyKey", cdkey);
+            request.Headers.Add("CompanyCode", companyCode);
+            request.Headers.Add("VchrType", "SALES ORDER");
+            request.Headers.Add("IsSync", "false");
+            request.Headers.Add("createdFrom", "WEB");
+
+            // Add Bearer token to Authorization header
+            var token = await TokenService.GetTokenAsync();
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // Get logged-in user ID
+            int userId = 0;
+            if (UserSession.UserId != null && int.TryParse(UserSession.UserId, out var parsedId))
+            {
+                userId = parsedId;
+            }
+
+            // Map dropdown string values to IDs using dictionaries
+            int costCentreId = CostCentreMap.TryGetValue(Order.CostCentre, out var ccid) ? ccid : 0;
+            int salesManId = SalesManMap.TryGetValue(Order.SalesMan, out var smid) ? smid : 0;
+            var agentId = AgentMap.TryGetValue(Order.Agent, out var agentid) ? agentid : 0;
+            var priceListId = PriceListMap.TryGetValue(Order.PriceList, out var plid) ? plid : 0;
+                
+            int billTypeId = BillTypeMap.TryGetValue(Order.BillType, out var btid) ? btid : 0;
+            int mopId = ModeOfPaymentMap.TryGetValue(Order.ModeOfPayment, out var mopid) ? mopid : 0;
+            //int priceListId = Order.PriceListID;
+            var amount = Order.Items.Sum(x => x.Qty * x.Rate);
+
+            var salesData = new IBIZWebApp.Models.SalesData
+            {
+                InvId = isEdit ? Order.InvId : newInvId,
+                InvNo = Order.InvoiceNo,
+                AutoNum = 0,
+                Prefix = "",
+                InvDate = Order.Date,
+                VchType = "Sales Order",
+                MOP = Order.ModeOfPayment,
+                TaxModeID = 1,
+                LedgerId = Order.LedgerID != null ? (int)Order.LedgerID : 0,
+                Party = Order.CustomerName,
+                Discount = (double)Order.Discount,
+                TaxAmt = (double)Order.TaxAmount,
+                GrossAmt = (double)(amount - Order.Discount + Order.TaxAmount),
+                BillAmt = (double)(amount - Order.Discount + Order.TaxAmount),
+                Cancelled = 0,
+                OtherExpense = 0,
+                SalesManID = salesManId,
+                Taxable = 0,
+                NonTaxable = (double)Order.Items.Sum(x => x.Qty * x.Rate),
+                ItemDiscountTotal = 0,
+                RoundOff = 0,
+                UserNarration = string.Empty,
+                SortNumber = 0,
+                DiscPer = 0,
+                VchTypeID = 1,
+                CCID = costCentreId,
+                CurrencyID = Order.CurrencyID,
+                PartyAddress = Order.Address,
+                UserID = userId,
+                AgentID = agentId,
+                CashDiscount = 0,
+                DPerType_ManualCalc_Customer = 0,
+                NetAmount = (double)Order.Items.Sum(x => x.Qty * x.Rate),
+                RefNo = Order.Reference,
+                CashPaid = 0,
+                CardPaid = 0,
+                blnWaitforAuthorisation = 0,
+                UserIDAuth = 0,
+                BillTime = Order.OrderTime.ToString("HH:mm:ss"),
+                StateID = 35,
+                ImplementingStateCode = null,
+                GSTType = "GSTR1 B2CS",
+                CGSTTotal = 0,
+                SGSTTotal = 0,
+                IGSTTotal = 0,
+                PartyGSTIN = Order.GSTIN,
+                BillType = Order.BillType,
+                blnHold = null,
+                PriceListID = priceListId,
+                EffectiveDate = Order.Date,
+                partyCode = null,
+                MobileNo = Order.MobileNumber,
+                Email = null,
+                TaxType = "None",
+                QtyTotal = (double)Order.Items.Sum(x => x.Qty),
+                DestCCID = 0,
+                AgentCommMode = null,
+                AgentCommAmount = 0,
+                AgentLID = 0,
+                BlnStockInsert = 1,
+                BlnConverted = null,
+                ConvertedParentVchTypeID = null,
+                ConvertedVchTypeID = null,
+                ConvertedVchNo = null,
+                ConvertedVchID = null,
+                DeliveryNoteDetails = null,
+                OrderDetails = null,
+                IntegrityStatus = null,
+                CustomerpointsSettled = null,
+                blnCashPaid = null,
+                originalsalesinvid = null,
+                retuninvid = null,
+                returnamount = null,
+                SystemName = Environment.MachineName,
+                LastUpdateDate = null,
+                LastUpdateTime = null,
+                DeliveryDetails = string.Empty,
+                DespatchDetails = string.Empty,
+                TermsOfDelivery = string.Empty,
+                FloodCessTot = null,
+                CounterID = 0,
+                ExtraCharges = null,
+                processed = null,
+                CessAmountTot = null,
+                QtyCompCessAmount = null,
+                GiftVoucherNo = null,
+                GiftVoucherAmount = null,
+                AutoNumRefNo = null,
+                AckNo = "0",
+                AckDt = null,
+                Irn = null,
+                SignedInvoice = null,
+                SignedQRCode = null,
+                Status = null,
+                EwbNo = null,
+                EwbDt = null,
+                EwbValidTill = null,
+                Remarks = null,
+                EInvoiceIRN = string.Empty,
+                StockEffectiveDate = null,
+                InTransit = null,
+                VsInvDate = null,
+                VsEffectiveDate = null,
+                PackingList = string.Empty,
+                BuyersName = string.Empty,
+                PreCarriageBy = string.Empty,
+                PlaceOfReceiptBy = string.Empty,
+                FlightNo = string.Empty,
+                FinalDestination = string.Empty,
+                CountryOfDestination = string.Empty,
+                PortCode = string.Empty,
+                GrowsWeight = string.Empty,
+                CountryOfOrigin = string.Empty,
+                CurrencyAmt = 0,
+                CurrencyRate = 0,
+                AppStatus = 0,
+                RivInvDate = null,
+                ProjectName = string.Empty,
+                Projectstatus = 0,
+                IsModified = false
+            };
+
+            var salesItems = Order.Items.Select((item, idx) => new IBIZWebApp.Models.SalesItemData
+            {
+                InvID = 0,
+                ItemName = item.ItemName,
+                ItemId = idx + 1,
+                Qty = (double)item.Qty,
+                Rate = (double)item.Rate,
+                UnitId = 0,
+                BatchCode = item.Batch,
+                TaxPer = 0,
+                TaxAmount = 0,
+                Discount = 0,
+                MRP = 0,
+                SlNo = 0,
+                Prate = 0,
+                Free = 0,
+                ItemDiscount = 0,
+                Expiry = null,
+                BatchUnique = string.Empty,
+                Unit = string.Empty,
+                CostValue = 0
+            }).ToList();
+
+            var apiModel = new IBIZWebApp.Models.SalesOrderApiModel
+            {
+                salesOrder = salesData,
+                salesOrderItem = salesItems
+            };
+            var salesOrderJson = System.Text.Json.JsonSerializer.Serialize(apiModel);
+
+            // Debug: Log outgoing JSON
+            await JS.InvokeVoidAsync("console.log", "SalesOrder JSON:", salesOrderJson);
+
+            // Pass this JSON string in FilteredJsonData of SalesJsonRequest
+            var body = new IBIZWebApp.Models.SalesJsonRequest
+            {
+                Id = isEdit ? Order.OrderId : string.Empty,
+                JsonData = string.Empty,
+                FilteredJsonData = salesOrderJson
+            };
+            var bodyJson = System.Text.Json.JsonSerializer.Serialize(body);
+            await JS.InvokeVoidAsync("console.log", "SalesJsonRequest body:", bodyJson);
+            request.Content = new StringContent(bodyJson, System.Text.Encoding.UTF8, "application/json");
+            var response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadAsStringAsync();
+                SaveSuccess = true;
+                      // Call LedgerBillStatusApi only if ModeOfPayment is Credit
+        if (Order.ModeOfPayment == "Credit")
+            {
+                await CallLedgerBillStatusApi(newInvId);
+            }
+                SaveMessage = isEdit ? "Order updated successfully!" : "Order saved successfully!";
+                await JS.InvokeVoidAsync("alert", SaveMessage);
+                ClearOrder();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                SaveSuccess = false;
+                SaveMessage = $"Failed to save order: {error}";
+                await JS.InvokeVoidAsync("alert", SaveMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            SaveSuccess = false;
+            SaveMessage = $"Error saving order: {ex.Message}";
+            await JS.InvokeVoidAsync("alert", SaveMessage);
+        }
+    }
+
+
+    private void ClearOrder()
+    {
+        Order = new SalesOrder();
+        SelectedCustomer = new Customer();
+    }
+
+    private void PrintOrder()
+    {
+        Console.WriteLine("Print order");
+    }
+
+    private void CancelOrder()
+    {
+        if (Order.Items.Count > 0 && !confirm("Are you sure you want to cancel this order?"))
+        {
+            return;
+        }
+        Order = new SalesOrder();
+        SelectedCustomer = new Customer();
+    }
+
+    private bool confirm(string message)
+    {
+        // In a real app, use a confirmation dialog component
+        return true;
+    }
+
+
+    // Add item from API grid to order
+    private void AddItemToOrder(SalesItem item)
+    {
+        var orderItem = new OrderItem
+        {
+            ItemName = item.Name,
+            ItemCode = item.ItemCode,
+            Batch = item.Batch,
+            Rate = item.Rate,
+            Qty = 1
+        };
+        Order.Items.Add(orderItem);
+        StateHasChanged();
+    }
+}

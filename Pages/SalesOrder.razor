@@ -1,0 +1,376 @@
+@page "/sales-order"
+@using IBIZWebApp.Services
+@inject NavigationManager Navigation
+@inject HttpClient Http
+
+@inject ICompanySelectionService CompanyService
+<PageTitle>Sales Order</PageTitle>
+
+<div class="sales-order-container">
+    <div class="order-header">
+        <h1>Sales Order</h1>
+        <button class="btn btn-primary" @onclick="CreateNewOrder">+ Create Sales Order</button>
+    </div>
+
+    <div class="order-filters">
+        <input type="search" placeholder="Search by Order ID or Customer" class="search-input" @bind="searchTerm" />
+        <select class="filter-select" @bind="selectedStatus">
+            <option value="">All Status</option>
+            <option>Draft</option>
+            <option>Confirmed</option>
+            <option>Shipped</option>
+            <option>Delivered</option>
+        </select>
+        <button class="btn btn-outline" @onclick="OnSearchAsync">Search</button>
+    </div>
+
+    <div class="table-container">
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-warning">@errorMessage</div>
+        }
+        else
+        {
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer Name</th>
+                        <th>Order Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (orders != null && orders.Count > 0)
+                    {
+                        foreach (var order in orders)
+                        {
+                            <tr>
+                                <td>@(!string.IsNullOrEmpty(order.InvId) && order.InvId != "0" ? order.InvId : (order.OrderId ?? ""))</td>
+                                <td>@order.CustomerName</td>
+                                <td>@($"{order.InvDate:yyyy-MM-dd}")</td>
+                                <td>@($"{order.NetAmount:C}")</td>
+                                <td>
+                                    <span class="badge @(order.Status == "Confirmed" ? "badge-success" : order.Status == "Shipped" ? "badge-info" : order.Status == "Draft" ? "badge-warning" : "")">@order.Status</span>
+                                </td>
+                                <td>
+                                    <button class="action-btn" @onclick="() => EditOrder(order.Id)">Edit</button>
+                                    <button class="action-btn" @onclick="() => ViewOrder(order.Id)">View</button>
+                                    <button class="action-btn" @onclick="() => ConfirmDelete(order.Id)">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6">No orders found.</td></tr>
+                    }
+                </tbody>
+            </table>
+            @if (showDeleteConfirm)
+            {
+                <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.3);z-index:9999;display:flex;align-items:center;justify-content:center;">
+                    <div style="background:white;padding:32px 24px;border-radius:8px;min-width:300px;box-shadow:0 2px 8px #0002;">
+                        <h3>Confirm Delete</h3>
+                        <p>Are you sure you want to delete this order?</p>
+                        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+                            <button class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                            <button class="btn btn-danger" @onclick="DeleteOrderConfirmed">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<style>
+    .sales-order-container {
+        padding: 30px;
+        background-color: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .order-header h1 {
+        margin: 0;
+        color: #333;
+        font-size: 32px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #0066cc;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0052a3;
+    }
+
+    .btn-outline {
+        background-color: transparent;
+        border: 2px solid #0066cc;
+        color: #0066cc;
+    }
+
+    .btn-outline:hover {
+        background-color: #f0f0f0;
+    }
+
+    .order-filters {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+
+    .search-input,
+    .filter-select {
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        background-color: white;
+    }
+
+    .search-input {
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .filter-select {
+        min-width: 150px;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .data-table thead {
+        background-color: #f0f0f0;
+        font-weight: 600;
+    }
+
+    .data-table th {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 2px solid #ddd;
+        color: #333;
+    }
+
+    .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .data-table tr:hover {
+        background-color: #f9f9f9;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .badge-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .badge-warning {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .action-btn {
+        padding: 5px 10px;
+        margin: 0 3px;
+        background-color: #e0e0e0;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: background-color 0.3s;
+    }
+
+    .action-btn:hover {
+        background-color: #d0d0d0;
+    }
+</style>
+
+@code {
+    private string searchTerm = string.Empty;
+    private string selectedStatus = string.Empty;
+    private List<IBIZWebApp.Models.SalesOrder> orders = new();
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Ensure company is loaded from storage before using SelectedCompany
+        await CompanyService.LoadSelectedCompanyAsync();
+        await LoadOrdersAsync();
+    }
+
+    private async Task OnSearchAsync()
+    {
+        await LoadOrdersAsync();
+    }
+
+    private async Task LoadOrdersAsync()
+    {
+        errorMessage = string.Empty;
+        orders = new List<IBIZWebApp.Models.SalesOrder>();
+        if (CompanyService.SelectedCompany == null)
+        {
+            errorMessage = "No company selected. Please log in again.";
+            return;
+        }
+
+        string url;
+        int page = 1;
+        int pageSize = 10;
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            url = $"{IBIZWebApp.ApiConstants.BaseUrl}/api/Order/search?page={page}&pageSize={pageSize}";
+        }
+        else
+        {
+            url = $"{IBIZWebApp.ApiConstants.BaseUrl}/api/Order/search?search={Uri.EscapeDataString(searchTerm)}&page={page}&pageSize={pageSize}";
+        }
+        var cdkey = CompanyService.SelectedCompany?.LicenceKey ?? string.Empty;
+        var companyCode = CompanyService.SelectedCompany?.CompanyCode ?? string.Empty;
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("CdyKey", cdkey);
+        request.Headers.Add("CompanyCode", companyCode);
+        var response = await Http.SendAsync(request);
+        if (response.IsSuccessStatusCode)
+        {
+            var json = await response.Content.ReadAsStringAsync();
+            var pagedResult = System.Text.Json.JsonSerializer.Deserialize<IBIZWebApp.Models.PagedResponse<IBIZWebApp.Models.SalesOrder>>(json, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var filtered = pagedResult?.Items ?? new List<IBIZWebApp.Models.SalesOrder>();
+            if (!string.IsNullOrEmpty(selectedStatus))
+            {
+                filtered = filtered.Where(o => o.Status == selectedStatus).ToList();
+            }
+            orders = filtered;
+        }
+        else
+        {
+            errorMessage = "Failed to load sales orders.";
+        }
+    }
+
+    private void EditOrder(string? orderId)
+    {
+        // If orderId is null, empty, or "0", treat as new order
+        if (string.IsNullOrEmpty(orderId) || orderId == "0")
+        {
+            Navigation.NavigateTo("/sales-order-entry");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/sales-order-entry/{orderId}");
+        }
+    }
+
+    private void ViewOrder(string? orderId)
+    {
+        if (!string.IsNullOrEmpty(orderId))
+        {
+            Navigation.NavigateTo($"/sales-order-entry/{orderId}?view=true");
+        }
+    }
+
+
+    private bool showDeleteConfirm = false;
+    private string? orderIdToDelete = null;
+
+    private void ConfirmDelete(string? orderId)
+    {
+        orderIdToDelete = orderId;
+        showDeleteConfirm = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+        orderIdToDelete = null;
+    }
+
+    private async void DeleteOrderConfirmed()
+    {
+        if (string.IsNullOrEmpty(orderIdToDelete))
+        {
+            showDeleteConfirm = false;
+            return;
+        }
+        try
+        {
+            var cdkey = CompanyService.SelectedCompany?.LicenceKey ?? string.Empty;
+            var companyCode = CompanyService.SelectedCompany?.CompanyCode ?? string.Empty;
+            var url = $"{IBIZWebApp.ApiConstants.BaseUrl}/api/Order/{orderIdToDelete}";
+            var request = new HttpRequestMessage(HttpMethod.Delete, url);
+            request.Headers.Add("CdyKey", cdkey);
+            request.Headers.Add("CompanyCode", companyCode);
+            var response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                errorMessage = "Order deleted successfully.";
+                await LoadOrdersAsync();
+            }
+            else
+            {
+                errorMessage = "Failed to delete order.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting order: {ex.Message}";
+        }
+        showDeleteConfirm = false;
+        orderIdToDelete = null;
+        StateHasChanged();
+    }
+
+    private void CreateNewOrder()
+    {
+        Navigation.NavigateTo("/sales-order-entry");
+    }
+}

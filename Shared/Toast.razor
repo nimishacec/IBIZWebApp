@@ -1,0 +1,73 @@
+@inject IBIZWebApp.Services.IToastService ToastService
+
+<div class="toast-container" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; display: flex; flex-direction: column; align-items: center;">
+    @if (Visible)
+    {
+        <div class="toast-message @ToastType" style="min-width: 280px; max-width: 90vw; padding: 1rem 1.5rem 1.2rem 1.5rem; border-radius: 12px; margin-bottom: 0.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.10); background: #f8f9fa; border-left: 7px solid @BorderColor; text-align: center; font-size: 0.98rem; font-weight: 400; position: relative; color: #222;">
+            <div style="font-size:1.05rem; font-weight:500; margin-bottom:0.18rem; color:#333;">@Title</div>
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <div style="margin-bottom:0.8rem; color:#444;">@Message</div>
+            }
+            <button @onclick="HideToast" style="padding: 0.32rem 1.1rem; border-radius: 5px; border: none; background: @BorderColor; color: #fff; font-weight: 400; font-size: 0.97rem; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.05); transition: background 0.2s;">OK</button>
+        </div>
+    }
+</div>
+
+@code {
+    private string Title = "";
+    private string Message = "";
+    private string ToastType = "";
+    private string BorderColor = "#007bff";
+    private bool Visible = false;
+    private System.Timers.Timer? timer;
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnShow += ShowToast;
+    }
+
+    private async Task ShowToast(string title, string message)
+    {
+        Title = title;
+        Message = message;
+        ToastType = GetToastType(title);
+        BorderColor = GetBorderColor(title);
+        Visible = true;
+        StateHasChanged();
+        timer?.Dispose();
+        timer = new System.Timers.Timer(3500);
+        timer.Elapsed += (s, e) => HideToast();
+        timer.AutoReset = false;
+        timer.Start();
+    }
+
+    private void HideToast()
+    {
+        Visible = false;
+        StateHasChanged();
+    }
+
+    private string GetToastType(string title)
+    {
+        if (title.Contains("error", StringComparison.OrdinalIgnoreCase)) return "toast-error";
+        if (title.Contains("success", StringComparison.OrdinalIgnoreCase)) return "toast-success";
+        if (title.Contains("warning", StringComparison.OrdinalIgnoreCase)) return "toast-warning";
+        if (title.Contains("info", StringComparison.OrdinalIgnoreCase)) return "toast-info";
+        return "toast-info";
+    }
+    private string GetBorderColor(string title)
+    {
+        if (title.Contains("error", StringComparison.OrdinalIgnoreCase)) return "#dc3545";
+        if (title.Contains("success", StringComparison.OrdinalIgnoreCase)) return "#28a745";
+        if (title.Contains("warning", StringComparison.OrdinalIgnoreCase)) return "#ffc107";
+        if (title.Contains("info", StringComparison.OrdinalIgnoreCase)) return "#17a2b8";
+        return "#007bff";
+    }
+
+    public void Dispose()
+    {
+        ToastService.OnShow -= ShowToast;
+        timer?.Dispose();
+    }
+}

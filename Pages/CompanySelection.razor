@@ -1,0 +1,107 @@
+@page "/company-selection"
+@using IBIZWebApp.Services
+@using IBIZWebApp.Models
+@inject ICompanySelectionService CompanyService
+@inject NavigationManager Navigation
+@inject IAuthenticationService AuthService
+
+
+<PageTitle>Select Your Company</PageTitle>
+
+<div class="company-selection-wrapper">
+    <div class="selection-header">
+        <h1>Select Your Company</h1>
+        <p class="subtitle">Choose the company you want to access</p>
+    </div>
+
+    @if (CompanyService.Companies == null || !CompanyService.Companies.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h2>No Companies Found</h2>
+            <p>There are no companies available for your account.</p>
+            <button class="btn btn-primary" @onclick="GoBack">Go Back</button>
+        </div>
+    }
+    else
+    {
+        <div class="companies-grid">
+            @foreach (var comp in CompanyService.Companies)
+            {
+                <div class="company-card @(isConnecting && selectedCompanyCode == comp.CompanyCode ? "connecting" : "")" 
+                     @onclick="() => SelectCompany(comp)">
+                    <div class="card-header">
+                        <div class="company-icon">🏢</div>
+                        @if (isConnecting && selectedCompanyCode == comp.CompanyCode)
+                        {
+                            <div class="spinner"></div>
+                        }
+                        else
+                        {
+                            <div class="select-indicator"></div>
+                        }
+                    </div>
+                    <div class="card-content">
+                        <h3>@comp.CompanyName</h3>
+                    </div>
+                    <div class="card-footer">
+                        @if (isConnecting && selectedCompanyCode == comp.CompanyCode)
+                        {
+                            <span class="status-text">Connecting...</span>
+                        }
+                        else
+                        {
+                            <span class="status-text">Click to select</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(connectionMessage))
+    {
+        <div class="alert alert-danger mt-4">
+            <strong>⚠️ Error:</strong> @connectionMessage
+        </div>
+    }
+
+    @if (CompanyService.Companies != null && CompanyService.Companies.Any())
+    {
+        <button class="btn btn-secondary mt-4" @onclick="GoBack" disabled="@isConnecting">Back to Mobile Verification</button>
+    }
+</div>
+
+
+@code {
+    private bool isConnecting = false;
+    private string? connectionMessage;
+    private string? selectedCompanyCode;
+
+    private async Task SelectCompany(MobileCheckResponse comp)
+    {
+        await CompanyService.SetSelectedCompanyAsync(comp);
+        isConnecting = true;
+        selectedCompanyCode = comp.CompanyCode;
+        connectionMessage = null;
+
+        // call API to establish DB connection
+        var result = await AuthService.ConnectCompanyAsync(comp.CompanyCode ?? "", comp.LicenceKey ?? "");
+        if (result.IsSuccess)
+        {
+            // navigate to company login screen
+            Navigation.NavigateTo("/company-login");
+        }
+        else
+        {
+            connectionMessage = result.Message;
+            isConnecting = false;
+            selectedCompanyCode = null;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/mobile-verification");
+    }
+}

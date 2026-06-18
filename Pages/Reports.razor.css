@@ -1,0 +1,95 @@
+.table-responsive {
+    width: 100%;
+    height: 220px;
+    min-width: 100px;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    background: #f4f8fc;
+    border: 2.5px solid #4f8cff;
+    border-radius: 14px;
+    padding: 16px 20px 28px 20px;
+    margin: 32px 0 24px 0;
+    box-sizing: border-box;
+    box-shadow: 0 4px 18px rgba(79,140,255,0.10);
+    scrollbar-color: #4f8cff #e0e7ef;
+    scrollbar-width: thin;
+}
+
+.table-responsive > table {
+    min-width: 1000px;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+/* For Webkit browsers */
+.table-responsive::-webkit-scrollbar {
+    height: 14px;
+    background: #f8fafc;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #bfc9d9;
+    border-radius: 8px;
+}
+.reports-container {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 32px 32px 32px 32px !important;
+    max-width: 1200px;
+    box-sizing: border-box;
+    border: 1.5px solid #e0e7ef;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+}
+
+body {
+    background: #f5f7fa;
+}
+.month-select-range {
+    margin-top: 32px !important;
+    margin-left: 32px !important;
+    background: #f8fafc;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    padding: 18px 28px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    justify-content: flex-start;
+    border: 1px solid #e0e7ef;
+}
+.month-select-range label {
+    font-weight: 600;
+    color: #2d3a4a;
+    margin-right: 10px;
+    font-size: 1.1rem;
+}
+.month-select-range select {
+    padding: 7px 16px;
+    border-radius: 6px;
+    border: 1px solid #bfc9d9;
+    background: #fff;
+    font-size: 1rem;
+    transition: border 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.month-select-range select:focus {
+    border: 1.5px solid #4f8cff;
+    outline: none;
+}
+.month-select-range button.fetch-btn {
+    background: linear-gradient(90deg, #4f8cff 0%, #38b6ff 100%);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 22px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(79,140,255,0.08);
+    transition: background 0.2s;
+}
+.month-select-range button.fetch-btn:disabled {
+    background: #bfc9d9;
+    cursor: not-allowed;
+}

@@ -1,0 +1,191 @@
+@page "/otp-verification"
+@using IBIZWebApp.Services
+@inject IAuthenticationService AuthService
+@inject NavigationManager Navigation
+@inject ICompanySelectionService CompanyService
+@inject IBIZWebApp.Services.UserSessionService UserSession
+
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+</head>
+<PageTitle>OTP Verification</PageTitle>
+
+<div class="login-container left-align">
+    <h1>OTP Verification</h1>
+    <p class="mb-3">Enter the OTP sent to <strong>@MobileNumber</strong></p>
+    <form @onsubmit="HandleVerifyOTP">
+        <div class="form-group">
+            <label for="otp">Enter OTP :</label>
+            <input 
+                type="text" 
+                id="otp" 
+                @bind="OTP"
+                placeholder="Enter OTP"
+                required
+                class="form-control"
+                disabled="@IsLoading" />
+        </div>
+        <button type="submit" class="btn btn-primary" disabled="@IsLoading">
+            @if (IsLoading)
+            {
+                <span>Verifying...</span>
+            }
+            else
+            {
+                <span>Verify OTP</span>
+            }
+        </button>
+    </form>
+    <button class="btn btn-secondary mt-3" @onclick="GoBack" disabled="@IsLoading">Back</button>
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <div class="alert @(IsSuccess ? "alert-success" : "alert-danger") mt-3">
+            @Message
+        </div>
+    }
+</div>
+<style>
+    @@media (max-width: 600px) {
+        .login-container {
+            width: 100vw;
+            max-width: 100vw;
+            margin: 0;
+            padding: 32px 0 24px 0;
+            background: #fff;
+            border-radius: 0;
+            box-shadow: none;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+        .login-container.left-align {
+            align-items: flex-start;
+            padding-left: 6vw;
+        }
+    }
+        padding: 10px;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background-color: #0056b3;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background-color: #5a6268;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .alert {
+        padding: 12px;
+        border-radius: 4px;
+        border: 1px solid #d1ecf1;
+    }
+
+    .alert-success {
+        border-color: #c3e6cb;
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .alert-danger {
+        border-color: #f5c6cb;
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+
+@code {
+    [SupplyParameterFromQuery(Name = "mobile")]
+    public string? MobileNumber { get; set; }
+
+    private string? OTP { get; set; }
+    private string? Message { get; set; }
+    private bool IsSuccess { get; set; }
+    private bool IsLoading { get; set; }
+    private string? DeviceId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(MobileNumber))
+        {
+            Navigation.NavigateTo("/mobile-verification");
+        }
+
+        // Try to get device ID from localStorage, else generate and store
+        DeviceId = await JS.InvokeAsync<string>("localStorage.getItem", "deviceId");
+        if (string.IsNullOrEmpty(DeviceId))
+        {
+            DeviceId = await JS.InvokeAsync<string>("eval", "crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16))");
+            await JS.InvokeVoidAsync("localStorage.setItem", "deviceId", DeviceId);
+        }
+    }
+
+    private async Task HandleVerifyOTP()
+    {
+        if (string.IsNullOrWhiteSpace(OTP))
+        {
+            Message = "Please enter OTP";
+            IsSuccess = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(MobileNumber))
+        {
+            Message = "Mobile number is missing";
+            IsSuccess = false;
+            return;
+        }
+
+        IsLoading = true;
+        Message = null;
+
+        // Pass DeviceId to AuthService
+        var result = await AuthService.VerifyOTPAsync(MobileNumber, OTP, DeviceId ?? string.Empty);
+
+
+        if (result.IsSuccess)
+        {
+            // store companies in service and sessionStorage, then navigate
+            await CompanyService.SetCompaniesAsync(result.Companies);
+            await UserSession.SetMobileNoAsync(MobileNumber);
+            Navigation.NavigateTo("/company-selection");
+        }
+        else
+        {
+            Message = result.Message;
+            IsSuccess = false;
+        }
+
+        IsLoading = false;
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/mobile-verification");
+    }
+
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
+}

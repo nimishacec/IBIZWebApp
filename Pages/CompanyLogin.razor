@@ -1,0 +1,214 @@
+@page "/company-login"
+@using IBIZWebApp.Models
+@using IBIZWebApp.Services
+@inject ICompanySelectionService CompanyService
+@inject IAuthenticationService AuthService
+@inject UserSessionService UserSession
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+</head>
+<PageTitle>Company Login</PageTitle>
+
+@if (CompanyService.SelectedCompany == null)
+{
+    <p>No company selected. <a href="/company-selection">Go back</a></p>
+}
+else
+{
+    <div style="margin-bottom: 16px; text-align:center;">
+        <button class="btn btn-outline-primary" type="button" style="margin-bottom:20px;width:100%;" @onclick='() => Navigation.NavigateTo("/company-selection")'>
+            &larr; Back to Company Selection
+        </button>
+    </div>
+    <div class="login-container left-align">
+        <h2>Login for @CompanyService.SelectedCompany.CompanyName</h2>
+        <form @onsubmit="HandleCompanyLogin" style="display: flex; flex-direction: column; gap: 0;">
+            <div class="form-group">
+                <label for="username">User Name :</label>
+                <input type="text" id="username" @bind="UserName" class="form-control" required />
+            </div>
+            <div class="form-group">
+                <label for="password">Password :</label>
+                <input type="password" id="password" @bind="Password" class="form-control" required />
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-success" style="flex:1;" disabled="@IsLoading">
+                    @(IsLoading ? "Logging in..." : "Login")
+                </button>
+                <button type="button" class="btn btn-company-selection" style="flex:1; background:#ff9800; color:#fff; border:1px solid #ff9800;" @onclick='() => Navigation.NavigateTo("/company-selection")'>
+                    &larr; Company Selection
+                </button>
+            </div>
+        </form>
+        @if (!string.IsNullOrEmpty(Message))
+        {
+            <div class="alert @(IsSuccess ? "alert-success" : "alert-danger") mt-3">
+                @Message
+            </div>
+        }
+    </div>
+}
+
+
+
+<style>
+    @@media (max-width: 600px) {
+        .login-container {
+            width: 100vw;
+            max-width: 100vw;
+            margin: 0;
+            padding: 32px 0 24px 0;
+            background: #fff;
+            border-radius: 0;
+            box-shadow: none;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+        .login-container.left-align {
+            align-items: flex-start;
+            padding-left: 6vw;
+        }
+    }
+    .login-container h2 {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    .form-group input:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+    .btn {
+        width: 100%;
+        padding: 10px;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+    .btn-success {
+        background-color: #28a745;
+    }
+    .btn-success:hover:not(:disabled) {
+        background-color: #218838;
+    }
+    .alert {
+        padding: 12px;
+        border-radius: 4px;
+        border: 1px solid #d1ecf1;
+    }
+    .alert-success {
+        border-color: #c3e6cb;
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .alert-danger {
+        border-color: #f5c6cb;
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+
+@code {
+    private string? UserName { get; set; }
+    private string? Password { get; set; }
+    private string? Message { get; set; }
+    private bool IsSuccess { get; set; }
+    private bool IsLoading { get; set; }
+    private string? DeviceId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Reload company list from sessionStorage if missing
+        if (CompanyService.Companies == null || !CompanyService.Companies.Any())
+        {
+            var json = await JS.InvokeAsync<string>("sessionStorage.getItem", "Companies");
+            if (!string.IsNullOrEmpty(json))
+            {
+                try
+                {
+                    CompanyService.Companies = System.Text.Json.JsonSerializer.Deserialize<List<MobileCheckResponse>>(json);
+                }
+                catch { /* ignore errors */ }
+            }
+        }
+
+        // Get or generate device ID
+        DeviceId = await JS.InvokeAsync<string>("localStorage.getItem", "deviceId");
+        if (string.IsNullOrEmpty(DeviceId))
+        {
+            DeviceId = await JS.InvokeAsync<string>("eval", "crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16))");
+            await JS.InvokeVoidAsync("localStorage.setItem", "deviceId", DeviceId);
+        }
+    }
+
+    private async Task HandleCompanyLogin()
+    {
+        if (CompanyService.SelectedCompany == null) return;
+
+        IsLoading = true;
+        Message = null;
+
+        var request = new CompanyLoginRequest
+        {
+            CompanyCode = CompanyService.SelectedCompany.CompanyCode ?? "",
+            CdyKey = CompanyService.SelectedCompany.LicenceKey ?? "",
+            UserName = UserName ?? "",
+            Password = Password ?? "",
+            DeviceId = DeviceId ?? "TP1A.220624.014" // fallback if not set
+        };
+
+        var result = await AuthService.CompanyLoginAsync(request);
+        if (result.Success)
+        {
+            IsSuccess = true;
+            Message = "Login successful!";
+            // Store userId and mobile number in session service
+            await UserSession.SetUserIdAsync(result.UserId);
+            // If you have mobile number available, set it here as well:
+            // UserSession.MobileNo = ...;
+            // Redirect to main page after login
+            Navigation.NavigateTo("/sales", forceLoad: true);
+        }
+        else
+        {
+            IsSuccess = false;
+            if (!string.IsNullOrEmpty(result.Message) && result.Message.Contains("already logged in on another device", System.StringComparison.OrdinalIgnoreCase))
+            {
+                Message = "You are already logged in on another device. Please logout from your previous device before logging in here.";
+            }
+            else
+            {
+                Message = result.Message;
+            }
+        }
+
+        IsLoading = false;
+    }
+}

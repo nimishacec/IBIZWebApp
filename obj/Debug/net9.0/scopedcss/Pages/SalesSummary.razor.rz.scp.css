@@ -1,0 +1,201 @@
+/* Ensure filter card rows match the table card style */
+.filter-card-row[b-jalnz5tenn] {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
+}
+/* Style for Columns, Export, and Refresh buttons to match screenshot */
+.daybook-actions .btn[b-jalnz5tenn],
+.daybook-actions .btn-group > .btn[b-jalnz5tenn] {
+    background: #0984e3;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(9,132,227,0.08);
+    margin-right: 8px;
+    margin-bottom: 4px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.daybook-actions .btn:hover[b-jalnz5tenn],
+.daybook-actions .btn-group > .btn:hover[b-jalnz5tenn] {
+    background: #1976d2;
+    color: #fff;
+}
+
+.daybook-actions .btn-pill[b-jalnz5tenn] {
+    border-radius: 8px;
+    padding-left: 18px;
+    padding-right: 18px;
+}
+
+.daybook-actions .dropdown-menu[b-jalnz5tenn] {
+    min-width: 160px;
+}
+
+.daybook-actions .dropdown-item[b-jalnz5tenn] {
+    color: #222;
+}
+
+.daybook-actions .dropdown-item:hover[b-jalnz5tenn] {
+    background: #f1f6fb;
+    color: #0984e3;
+}
+.daybook-table th[b-jalnz5tenn], .daybook-table td[b-jalnz5tenn] {
+    min-width: 90px;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.daybook-table th[data-col="Party Code"][b-jalnz5tenn], .daybook-table td[data-col="Party Code"][b-jalnz5tenn],
+.daybook-table th[data-col="Cost Centre"][b-jalnz5tenn], .daybook-table td[data-col="Cost Centre"][b-jalnz5tenn] {
+    min-width: 80px;
+    max-width: 120px;
+}
+.daybook-pagination[b-jalnz5tenn] {
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+.custom-header th[b-jalnz5tenn] {
+    background: #e3f2fd !important; /* Light blue */
+    color: #1565c0 !important;
+}
+.daybook-page[b-jalnz5tenn] {
+    padding: 24px;
+    background: #f2f4f8;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.daybook-hero[b-jalnz5tenn] {
+    background: linear-gradient(135deg, #0f62fe 0%, #003a92 100%);
+    color: #fff;
+    border: none;
+    border-radius: 18px;
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.daybook-label[b-jalnz5tenn] {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 14px;
+    opacity: 0.8;
+    margin-bottom: 4px;
+}
+
+.daybook-date[b-jalnz5tenn] {
+    display: flex;
+    gap: 16px;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.daybook-actions[b-jalnz5tenn] {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.btn-pill[b-jalnz5tenn] {
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    color: #fff;
+    padding: 8px 20px;
+    font-weight: 600;
+}
+
+.btn-pill:hover[b-jalnz5tenn] {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.daybook-tabs .nav-link[b-jalnz5tenn] {
+    border-radius: 999px;
+    padding: 8px 22px;
+    background: #fff;
+    color: #003a92;
+    border: 1px solid transparent;
+    font-weight: 600;
+}
+
+.daybook-tabs .nav-link.active[b-jalnz5tenn] {
+    background: #003a92;
+    color: #fff;
+}
+
+.daybook-filter[b-jalnz5tenn] {
+    border: none;
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.filter-grid[b-jalnz5tenn] {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.filter-card[b-jalnz5tenn] {
+    background: #f8fbff;
+    border: 1px solid #dde3f0;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.daybook-loading[b-jalnz5tenn],
+.daybook-empty[b-jalnz5tenn] {
+    border: none;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    font-weight: 600;
+    background: #fff;
+}
+
+.daybook-table-card[b-jalnz5tenn] {
+    border: none;
+    border-radius: 16px;
+}
+
+.daybook-table thead th[b-jalnz5tenn] {
+    background: #0f62fe;
+    color: #fff;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.daybook-table tbody td[b-jalnz5tenn] {
+    background: #fff;
+}
+
+.grand-total-row td[b-jalnz5tenn] {
+    background: #fff7d6;
+    font-weight: 700;
+}
+
+.grand-label[b-jalnz5tenn] {
+    color: #0f62fe;
+}
+
+.daybook-pagination[b-jalnz5tenn] {
+    font-weight: 600;
+}
+
+.daybook-columns[b-jalnz5tenn] {
+    min-width: 220px;
+    max-height: 320px;
+    overflow-y: auto;
+}

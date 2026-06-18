@@ -1,0 +1,62 @@
+﻿
+@inherits LayoutComponentBase
+@using IBIZWebApp.Shared
+@inject IJSRuntime JS
+@implements IDisposable
+@code {
+    private bool isMobileMenuOpen;
+    private int windowWidth = 1024;
+    private bool IsMobileView => windowWidth <= 768;
+    private DotNetObjectReference<MainLayout>? objRef = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        objRef = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("blazorNavMenu.registerResizeCallback", objRef);
+        windowWidth = await JS.InvokeAsync<int>("blazorNavMenu.getWindowWidth");
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnWindowResize(int width)
+    {
+        windowWidth = width;
+        StateHasChanged();
+    }
+
+    public void OnMenuStateChanged(bool open)
+    {
+        isMobileMenuOpen = open;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
+}
+
+<CascadingValue Value="isMobileMenuOpen">
+    <div class="page">
+        @if (!IsMobileView)
+        {
+            <div class="sidebar">
+                <NavMenu OnMenuStateChanged="OnMenuStateChanged" />
+            </div>
+        }
+        else
+        {
+            <NavMenu OnMenuStateChanged="OnMenuStateChanged" />
+        }
+        <main class="main-centered-content">
+            <MainContentWrapper>
+                <article class="content main-centered-content">
+                    @Body
+                </article>
+            </MainContentWrapper>
+            <Toast />
+        </main>
+    </div>
+</CascadingValue>
+
+
