@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "uF+djub/m/M=",
+  "dgSpecHash": "Ts5WvXn7fPU=",
   "success": true,
-  "projectFilePath": "D:\\IBIZWebApp\\IBIZWebApp.csproj",
+  "projectFilePath": "d:\\IBIZWebApp\\IBIZWebApp.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\DCS INFOWAY\\.nuget\\packages\\microsoft.aspnetcore.authorization\\9.0.15\\microsoft.aspnetcore.authorization.9.0.15.nupkg.sha512",
     "C:\\Users\\DCS INFOWAY\\.nuget\\packages\\microsoft.aspnetcore.components\\9.0.15\\microsoft.aspnetcore.components.9.0.15.nupkg.sha512",
@@ -28,8 +28,8 @@
     "C:\\Users\\DCS INFOWAY\\.nuget\\packages\\microsoft.extensions.primitives\\9.0.15\\microsoft.extensions.primitives.9.0.15.nupkg.sha512",
     "C:\\Users\\DCS INFOWAY\\.nuget\\packages\\microsoft.jsinterop\\9.0.15\\microsoft.jsinterop.9.0.15.nupkg.sha512",
     "C:\\Users\\DCS INFOWAY\\.nuget\\packages\\microsoft.jsinterop.webassembly\\9.0.15\\microsoft.jsinterop.webassembly.9.0.15.nupkg.sha512",
-    "C:\\Users\\DCS INFOWAY\\.nuget\\packages\\microsoft.net.illink.tasks\\9.0.17\\microsoft.net.illink.tasks.9.0.17.nupkg.sha512",
-    "C:\\Users\\DCS INFOWAY\\.nuget\\packages\\microsoft.net.sdk.webassembly.pack\\10.0.9\\microsoft.net.sdk.webassembly.pack.10.0.9.nupkg.sha512",
+    "C:\\Users\\DCS INFOWAY\\.nuget\\packages\\microsoft.net.illink.tasks\\9.0.16\\microsoft.net.illink.tasks.9.0.16.nupkg.sha512",
+    "C:\\Users\\DCS INFOWAY\\.nuget\\packages\\microsoft.net.sdk.webassembly.pack\\9.0.17\\microsoft.net.sdk.webassembly.pack.9.0.17.nupkg.sha512",
     "C:\\Users\\DCS INFOWAY\\.nuget\\packages\\microsoft.netcore.app.runtime.mono.browser-wasm\\9.0.17\\microsoft.netcore.app.runtime.mono.browser-wasm.9.0.17.nupkg.sha512"
   ],
   "logs": []
