@@ -1,12 +1,12 @@
 self.assetsManifest = {
-  "version": "o+4854O7",
+  "version": "9npLClzI",
   "assets": [
     {
       "hash": "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
       "url": ".nojekyll"
     },
     {
-      "hash": "sha256-zDoGSIk74S/bG5wBOTLETqYy7tXNxEQ1OULamogrfSU=",
+      "hash": "sha256-F0tn9DuNK7aBnfadcNjh5/bRifaokiix5imx86VVS98=",
       "url": "404.html"
     },
     {
@@ -14,12 +14,12 @@ self.assetsManifest = {
       "url": "IBIZWebApp.styles.css"
     },
     {
-      "hash": "sha256-oecFiHz4WCqlpy1pkknYBlBH3cQqZhQ5SQgQduo8M6g=",
-      "url": "_framework/IBIZWebApp.7i9t7vwoou.pdb"
+      "hash": "sha256-HCrBtvVZpUreoJKUJXgeP4mNps2ZxbvNRWZjvd8tELU=",
+      "url": "_framework/IBIZWebApp.0p68eh1143.wasm"
     },
     {
-      "hash": "sha256-gocQhNaiCiGfIqEpb4b4ut88IZphMbLyAXdlbBVbw/I=",
-      "url": "_framework/IBIZWebApp.iftqlzc8jl.wasm"
+      "hash": "sha256-Q3hqxL21ScDJGakrc8SqPeTWkAYHeSgNGacQ65S1qGI=",
+      "url": "_framework/IBIZWebApp.5ax1hu0hrp.pdb"
     },
     {
       "hash": "sha256-UtUh+p3CsUnlmpahg+JwdzncIDIt02XbGRi4cHQnVRk=",
@@ -778,7 +778,7 @@ self.assetsManifest = {
       "url": "_framework/WindowsBase.y8ae02uxne.wasm"
     },
     {
-      "hash": "sha256-/i0lpMNooA+IbC58TsyJhlZCoVruHgYR7W045RO9AZI=",
+      "hash": "sha256-Zg6xvtF23t52p1hq/behiu3hNa4YOEBSCv47ODxui4A=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -850,7 +850,7 @@ self.assetsManifest = {
       "url": "icon-512.png"
     },
     {
-      "hash": "sha256-zDoGSIk74S/bG5wBOTLETqYy7tXNxEQ1OULamogrfSU=",
+      "hash": "sha256-K8qIDrDGOekT5j1J5SG0DIxD4NXrNnB6Fp4FIZaydNs=",
       "url": "index.html"
     },
     {

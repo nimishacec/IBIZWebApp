@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "IBIZWebApp",
   "resources": {
-    "hash": "sha256-jnTZIXq6p6HxrnP+OBDtfXUNb+Fgp6lRNWvKTjxCQXg=",
+    "hash": "sha256-xanWYpf81r8XMM0PYWnvhuv6gL885qtA1hx67J6oyoc=",
     "fingerprinting": {
       "Microsoft.AspNetCore.Authorization.ijj7gvu014.wasm": "Microsoft.AspNetCore.Authorization.wasm",
       "Microsoft.AspNetCore.Components.78v4nu2a5y.wasm": "Microsoft.AspNetCore.Components.wasm",
@@ -201,8 +201,8 @@
       "icudt_CJK.tjcz0u77k5.dat": "icudt_CJK.dat",
       "icudt_EFIGS.tptq2av103.dat": "icudt_EFIGS.dat",
       "icudt_no_CJK.lfu7j35m59.dat": "icudt_no_CJK.dat",
-      "IBIZWebApp.iftqlzc8jl.wasm": "IBIZWebApp.wasm",
-      "IBIZWebApp.7i9t7vwoou.pdb": "IBIZWebApp.pdb"
+      "IBIZWebApp.0p68eh1143.wasm": "IBIZWebApp.wasm",
+      "IBIZWebApp.5ax1hu0hrp.pdb": "IBIZWebApp.pdb"
     },
     "jsModuleNative": {
       "dotnet.native.qc8g39g30v.js": "sha256-SvVveFrqwSE/8qjn/DA3aVnuMXhmK4Ln+euLxQu8azU="
@@ -412,10 +412,10 @@
       "WindowsBase.y8ae02uxne.wasm": "sha256-YpOYeMLDuchOCocYiO5kv2I5pRhSWnQf5dUnxxoLx5U=",
       "mscorlib.psc7ighyl0.wasm": "sha256-d6G5ZJb6YYCRbk8d7mDqZMv6fP4X3DaizvVwaelHRRE=",
       "netstandard.mpl0s8028r.wasm": "sha256-6qlDOZEfxxE8/6gC6pnGt8ZFmV3YnAbNrh8hSJMZXbk=",
-      "IBIZWebApp.iftqlzc8jl.wasm": "sha256-gocQhNaiCiGfIqEpb4b4ut88IZphMbLyAXdlbBVbw/I="
+      "IBIZWebApp.0p68eh1143.wasm": "sha256-HCrBtvVZpUreoJKUJXgeP4mNps2ZxbvNRWZjvd8tELU="
     },
     "pdb": {
-      "IBIZWebApp.7i9t7vwoou.pdb": "sha256-oecFiHz4WCqlpy1pkknYBlBH3cQqZhQ5SQgQduo8M6g="
+      "IBIZWebApp.5ax1hu0hrp.pdb": "sha256-Q3hqxL21ScDJGakrc8SqPeTWkAYHeSgNGacQ65S1qGI="
     }
   },
   "cacheBootResources": true,
