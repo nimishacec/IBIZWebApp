@@ -1,12 +1,12 @@
 self.assetsManifest = {
-  "version": "9npLClzI",
+  "version": "IL0OZpMX",
   "assets": [
     {
       "hash": "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
       "url": ".nojekyll"
     },
     {
-      "hash": "sha256-F0tn9DuNK7aBnfadcNjh5/bRifaokiix5imx86VVS98=",
+      "hash": "sha256-0FWdfLJ4NXSqR7cvJzi5WWHipCj8KnY3oGfhol2e2Lk=",
       "url": "404.html"
     },
     {
@@ -14,12 +14,12 @@ self.assetsManifest = {
       "url": "IBIZWebApp.styles.css"
     },
     {
-      "hash": "sha256-HCrBtvVZpUreoJKUJXgeP4mNps2ZxbvNRWZjvd8tELU=",
-      "url": "_framework/IBIZWebApp.0p68eh1143.wasm"
+      "hash": "sha256-KFJpxRcKRPAeuFqURsiG0p/9XajRO4xv2L9Xs9pe/0Y=",
+      "url": "_framework/IBIZWebApp.069r7l9ybz.wasm"
     },
     {
-      "hash": "sha256-Q3hqxL21ScDJGakrc8SqPeTWkAYHeSgNGacQ65S1qGI=",
-      "url": "_framework/IBIZWebApp.5ax1hu0hrp.pdb"
+      "hash": "sha256-/pvkOj/CJp+kXd0tLfAfZDETWskblyi6t2LQhFr9Uv0=",
+      "url": "_framework/IBIZWebApp.quvf5km7g7.pdb"
     },
     {
       "hash": "sha256-UtUh+p3CsUnlmpahg+JwdzncIDIt02XbGRi4cHQnVRk=",
@@ -778,7 +778,7 @@ self.assetsManifest = {
       "url": "_framework/WindowsBase.y8ae02uxne.wasm"
     },
     {
-      "hash": "sha256-Zg6xvtF23t52p1hq/behiu3hNa4YOEBSCv47ODxui4A=",
+      "hash": "sha256-hGHd//411vBndfdaTZvejDQrCF4PtA/5zjwiDzKInWs=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -850,7 +850,7 @@ self.assetsManifest = {
       "url": "icon-512.png"
     },
     {
-      "hash": "sha256-K8qIDrDGOekT5j1J5SG0DIxD4NXrNnB6Fp4FIZaydNs=",
+      "hash": "sha256-HpSZOMI6sNqLA9quyOYRjeWatDOl31/dCG1ml1XK7RA=",
       "url": "index.html"
     },
     {
@@ -1036,6 +1036,10 @@ self.assetsManifest = {
     {
       "hash": "sha256-W3AX9dCyyuVRLvWIbZ0aDW/2klYd+AIbX1LNEVvZgwI=",
       "url": "lib/bootstrap/dist/js/bootstrap.min.js.map"
+    },
+    {
+      "hash": "sha256-zk6Of0zrrTbzVApXzjPbtSfK0vij+MoISltGEYIrAlE=",
+      "url": "manifest.webmanifest"
     },
     {
       "hash": "sha256-enKgCMkYmCpfEcmg6Annbmc40VZ/A6aYYSQjZfVn2cU=",

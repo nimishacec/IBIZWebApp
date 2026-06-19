@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "d:\\IBIZWebApp\\IBIZWebApp.csproj": {}
+    "D:\\IBIZWebApp\\IBIZWebApp.csproj": {}
   },
   "projects": {
-    "d:\\IBIZWebApp\\IBIZWebApp.csproj": {
+    "D:\\IBIZWebApp\\IBIZWebApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\IBIZWebApp\\IBIZWebApp.csproj",
+        "projectUniqueName": "D:\\IBIZWebApp\\IBIZWebApp.csproj",
         "projectName": "IBIZWebApp",
-        "projectPath": "d:\\IBIZWebApp\\IBIZWebApp.csproj",
+        "projectPath": "D:\\IBIZWebApp\\IBIZWebApp.csproj",
         "packagesPath": "C:\\Users\\DCS INFOWAY\\.nuget\\packages\\",
-        "outputPath": "d:\\IBIZWebApp\\obj\\",
+        "outputPath": "D:\\IBIZWebApp\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -31,6 +31,7 @@
         },
         "frameworks": {
           "net9.0": {
+            "framework": "net9.0",
             "targetAlias": "net9.0",
             "projectReferences": {}
           }
@@ -45,10 +46,11 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net9.0": {
+          "framework": "net9.0",
           "targetAlias": "net9.0",
           "dependencies": {
             "Microsoft.AspNetCore.Components.WebAssembly": {
@@ -63,13 +65,13 @@
             "Microsoft.NET.ILLink.Tasks": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[9.0.16, )",
+              "version": "[9.0.17, )",
               "autoReferenced": true
             },
             "Microsoft.NET.Sdk.WebAssembly.Pack": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[9.0.17, )",
+              "version": "[10.0.9, )",
               "autoReferenced": true
             }
           },
@@ -95,7 +97,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.314/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json"
         }
       },
       "runtimes": {
